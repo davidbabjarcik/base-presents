@@ -4,6 +4,7 @@
     ['app', '/app', 'Overview'],
     ['tickets', '/tickets', 'Tickets'],
     ['tickets', '/scan', 'Scanner'],
+    ['tickets', '/ticket-design', 'Ticket design'],
     ['stock', '/stock', 'Stock'],
     ['staff', '/staff', 'Staff'],
     ['promo', '/promo', 'Promo'],

@@ -12,6 +12,8 @@ import { openDb } from './db.js';
 import { createAuth } from './auth.js';
 import { registerTickets } from './tickets.js';
 import { registerHub } from './hub.js';
+import { registerDesign } from './design.js';
+import { registerSignup } from './signup.js';
 import { seedRealEvents, loadDemo, removeDemo, hasDemo } from './demo.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -82,6 +84,8 @@ app.use(['/api/event', '/api/checkout'], (req, res, next) => {
   next();
 });
 app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
+// pdf.js (installed with npm) draws PDF previews right in the page
+app.use('/vendor/pdfjs', express.static(path.join(__dirname, 'node_modules', 'pdfjs-dist', 'build')));
 
 app.get('/', (req, res) => res.redirect(SITE_URL + '/#tickets'));
 
@@ -92,6 +96,8 @@ app.get('/api/me', auth.me);
 
 registerTicketJson();
 registerHub(app, { db, auth });
+registerSignup(app, { db, auth, publicDir: path.join(__dirname, 'public') });
+registerDesign(app, { db, auth, event: EVENT, assetsDir: path.join(__dirname, '..', 'assets'), dataDir: path.join(__dirname, 'data') });
 
 // Demo data (admin)
 app.get('/api/demo', auth.requireSection('users'), (req, res) => res.json({ demo: hasDemo(db) }));

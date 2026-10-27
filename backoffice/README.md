@@ -10,8 +10,10 @@ Interná aplikácia pre tím Base Presents. **Prototyp**: beží u teba na poč�
 | Prehľad | `/app` | najbližší event, predané lístky, nízky sklad, najbližšie promo, top nápady, posledný event |
 | Lístky | `/tickets` | predaj lístkov: predané, zostáva, tržba, koľko ľudí prišlo, objednávky |
 | Skener | `/scan` | kontrola lístkov pri vstupe (kamera alebo ručne zadaný kód) |
+| Ticket design | `/ticket-design` | ako vyzerá PDF lístok: čierny/biely, obrázok, texty, náhľad |
 | Sklad | `/stock` | alko / nealko / materiál: stav, objem, cena za kus, hodnota skladu, odbery (aj komis a free), výdaj na event, straty, inventúra, história |
-| Staff | `/staff` | rozpis ľudí po hodinách (07:00–01:00) na každý deň: príprava, bar, rádio… |
+| Staff | `/staff` | rozpis ľudí po hodinách (07:00–01:00) na každý deň: príprava, bar, rádio… + verejný odkaz, kde sa ľudia zapíšu sami |
+| Zápis do staffu (verejný) | `/join/<kód>` | bez prihlásenia: človek vyberie sekciu, napíše meno a vyznačí hodiny |
 | Promo | `/promo` | promo kalendár: čo, kde (Instagram, TikTok, plagáty…), kedy, kto, stav |
 | Štatistiky | `/stats` | porovnanie eventov: počet ľudí, počet barov, tržby barov, € na hosťa, najlepší bar a produkt |
 | Nápady | `/ideas` | nápady na nové eventy: prečo, plusy a mínusy, hlasovanie, stav |
@@ -83,11 +85,22 @@ Všetko je v jednom súbore **`backoffice/data/base.db`** (SQLite). Tiež nejde 
 2. Server **podrží miesta na 30 minút** (nepredá viac, ako je kapacita).
 3. Platba: bez Stripe kľúča sa ukáže **simulovaná platba**. So Stripe kľúčom sa ukáže skutočná platobná stránka Stripe v test móde (testovacia karta `4242 4242 4242 4242`, ľubovoľný budúci dátum, ľubovoľné CVC).
 4. Po zaplatení dostane stránku s lístkami. Každý lístok má **QR kód** a kód `XXXX-XXXX-XXXX`. E-mail sa zatiaľ neposiela, odkaz sa len vypíše do konzoly servera.
+   Lístky si môže **stiahnuť ako PDF**: všetky naraz (jedna strana = jeden lístok) alebo každý zvlášť. PDF je vo formáte mobilu a dá sa uložiť do telefónu.
 5. Pri vstupe **Skener** ukáže: **Valid** (vitaj), **Used** (už použitý, aj s časom) alebo **Invalid** (neexistuje).
 
 Kamera v skeneri funguje len na `localhost` alebo cez `https://`. Inak treba kód z lístka zadať ručne.
 
 Stripe test kľúč: na stripe.com si vytvor účet, zapni **Test mode** → Developers → API keys → skopíruj **Secret key** do `STRIPE_SECRET_KEY` a reštartuj server.
+
+### Ticket design (PDF lístok)
+- Nastavuje sa v **Ticket design** (`/ticket-design`), vidí ho admin a účet Lístky.
+- **Farby**: čierny alebo biely lístok.
+- **Obrázok** (plagát eventu, fotka): PNG alebo JPG do 8 MB. Môže byť **hore ako banner**, **za všetkým** (so stmavením, ktoré nastavíš posuvníkom) alebo **žiadny**. Široký obrázok sa hodí hore, vysoký za všetko.
+- **Texty**: nadpis (prázdny = názov eventu), podnadpis, riadok s infom na útržku (napr. „18+ · Bring your ID“) a drobné písmo (podmienky). Dá sa vypnúť cena.
+- Vpravo je **náhľad** s ukážkovými lístkami. Po *Save* sa obnoví.
+- Na lístku je logo BASE, názov eventu, dátum, štart, miesto, meno, typ lístka (a cena), veľký **QR kód** a jeho kód, perforácia a útržok s infom.
+- Písma sú rovnaké ako na webe (Montserrat, Inter, JetBrains Mono). QR je vektorový, takže je ostrý pri akomkoľvek zväčšení.
+- Nahratý obrázok je v `backoffice/data/uploads/` (nejde na GitHub).
 
 ### Sklad (alko / nealko / materiál)
 - **Hore**: hodnota skladu spolu a zvlášť alko / nealko (stav × posledná cena za kus).
@@ -111,6 +124,17 @@ Stripe test kľúč: na stripe.com si vytvor účet, zapni **Test mode** → Dev
 - Pri človeku sa dá písať poznámka (napr. „operatívne“, „len poobede“). Meno a poznámka sa uložia, keď klikneš mimo poľa.
 - **Nový deň** sa dá vytvoriť prázdny alebo ako **kópia** iného dňa (rovnakí ľudia aj hodiny). V detaile dňa je aj *Duplicate day*.
 - Mená sa pri písaní ponúkajú z ľudí, ktorí už boli v niektorom rozpise.
+
+#### Verejný zápis (ľudia sa zapíšu sami)
+1. Otvor deň v **Staff** → panel **Public sign-up**.
+2. Napíš **sekcie**, do ktorých sa dá zapísať, oddelené čiarkou (napr. `Rádio 9, ŠRJ 9, Bar`). Každá sekcia je samostatný zoznam.
+3. Zaškrtni **Link is open** → *Save*. Ukáže sa odkaz (`/join/…`), skopíruj ho a pošli ľuďom (WhatsApp, Instagram…).
+4. Človek na odkaze **bez prihlásenia** vyberie sekciu, napíše meno, vyznačí hodiny (ťuknutím, ťahaním alebo *From–To → Fill*) a môže pridať poznámku.
+5. Po zapísaní dostane **vlastný odkaz na úpravu** (zapamätá sa aj v jeho prehliadači), cez ktorý si neskôr zmení hodiny alebo sa odhlási.
+- Na verejnej stránke vidno, **kto sa už zapísal** a kedy môže (bez poznámok).
+- V tíme sa zápisy objavia v rozpise dňa so štítkom **self** (stránka sa sama obnovuje každých 20 s). Tím ich môže ďalej upravovať ako ostatné riadky.
+- **Zavrieť zápis**: odškrtni *Link is open*. **New link**: vytvorí nový odkaz a starý prestane fungovať.
+- Ochrana: to isté meno sa v jednej sekcii nedá zapísať dvakrát, max. 15 zápisov z jedného zariadenia za hodinu a skryté pole proti botom.
 
 ### Promo kalendár
 - Mesačný kalendár (na mobile zoznam). Eventy sú označené bielou čiarou.
@@ -138,7 +162,7 @@ Eventy z project reportu (Chodbovica 1–5 s dátumami a miestami, dva Chillouty
 - **Demo dáta**: tlačidlo *Remove demo data* zmaže ukážkové čísla, sklad, promo príspevky a ukážkový nápad. Skutočné eventy a všetko, čo ste zadali vy, ostane.
 
 ### Roly
-| Rola | Lístky + skener | Sklad | Staff | Promo | Štatistiky | Nápady | Účty |
+| Rola | Lístky + skener + ticket design | Sklad | Staff | Promo | Štatistiky | Nápady | Účty |
 |---|---|---|---|---|---|---|---|
 | Admin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Ticket sales (Lístky) | ✓ | – | – | ✓ | – | ✓ | – |
@@ -155,9 +179,13 @@ Zmena, kto čo vidí: `ACCESS` v `auth.js`.
 - `db.js`: tabuľky a pomocné funkcie
 - `auth.js`: účty, heslá (scrypt hash), prihlásenie (HttpOnly cookie, sessions v DB), roly
 - `tickets.js`: predaj lístkov, Stripe Checkout, demo platba, QR lístky, check-in
+- `ticketpdf.js`: kreslenie PDF lístka (pdfkit, fonty z npm balíkov `@expo-google-fonts/*`)
+- `design.js`: stiahnutie PDF pre kupujúceho, nastavenia Ticket design, nahratie obrázka, náhľad
+- `signup.js`: verejný zápis do staff rozpisu (`/join/…`)
 - `hub.js`: API pre sklad, staff rozpis, promo, eventy/bary/štatistiky, nápady, účty
 - `demo.js`: skutočné eventy z reportu + demo dáta (označené `demo = 1`)
 - `public/`: stránky (čisté HTML + JS). Spoločná hlavička, navigácia a pomocné funkcie sú v `public/hub.js` a `public/hub.css`.
+- Náhľad PDF kreslí **pdf.js** (npm balík `pdfjs-dist`, server ho podáva na `/vendor/pdfjs/`).
 
 Interné stránky sú zatiaľ po anglicky (ako web). Preložiť do slovenčiny sa dajú.
 

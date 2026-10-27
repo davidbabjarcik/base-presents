@@ -169,12 +169,14 @@ export function registerTickets(app, { db, auth, stripe, mode, event, baseUrl, s
           <div class="qr">${svg}</div>
           <p class="code">${t.code}</p>
           <p class="muted">${esc(t.holder)} · ${esc(event.ticketName)}</p>
+          <a class="link" style="align-self:center;color:#5C5C5C" href="/order/${order.id}/tickets.pdf?t=${order.access_token}&n=${i + 1}">Download PDF ↓</a>
         </article>`;
       }));
       res.send(shell('Your tickets', `
         <p class="lead">Thanks, ${esc(order.name)}! Show the QR code at the door.</p>
         <p class="muted">Order ${order.id} · ${eur(order.amount_cents)} · ${order.mode === 'demo' ? 'demo payment' : 'Stripe test payment'}.
           In the real version this page is also sent to <b>${esc(order.email)}</b>.</p>
+        <a class="btn" style="max-width:420px;margin-top:24px" href="/order/${order.id}/tickets.pdf?t=${order.access_token}"><span>Download ${tickets.length > 1 ? 'all tickets' : 'ticket'} as PDF</span><span>↓</span></a>
         <div class="tickets">${cards.join('')}</div>
         <p style="margin-top:32px"><a class="link" href="${siteUrl}">← Back to Base Presents</a></p>`));
     });

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ticket design · BASE Hub</title>
+<link rel="icon" href="/assets/favicon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/hub.css">
+<script src="/hub.js"></script>
+<script src="/vendor/pdfjs/pdf.min.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <span class="label">How the PDF ticket looks</span>
+  <h1>Ticket design</h1>
+  <div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+    <form id="form" style="flex:1 1 360px;display:flex;flex-direction:column;gap:20px;min-width:0">
+      <section class="panel">
+        <span class="label">Style</span>
+        <div class="form-row">
+          <label><span class="label">Colours</span><select name="theme"><option value="dark">Black ticket</option><option value="light">White ticket</option></select></label>
+          <label><span class="label">Image</span><select name="layout" id="layout">
+            <option value="banner">On top (banner)</option><option value="background">Behind everything</option><option value="none">No image</option></select></label>
+          <label id="overlay-wrap"><span class="label">Darken image <output id="ov-out"></output></span><input type="range" name="overlay" min="0" max="95" step="5" id="overlay" style="min-height:44px;border:0;padding:0"></label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <span class="label">Image (event poster / artwork)</span>
+        <img id="art" alt="Current ticket image" style="display:none;max-width:100%;max-height:220px;object-fit:contain;align-self:flex-start;border:1px solid #333">
+        <p class="muted" id="no-art" style="margin:0">No image yet. Upload a PNG or JPG (max 8 MB). A wide image works best on top, a tall one behind everything.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label class="btn ghost small" style="flex-direction:row;cursor:pointer"><span>Upload image</span><input type="file" id="file" accept="image/png,image/jpeg" hidden></label>
+          <button class="btn ghost small" type="button" id="remove-art" hidden><span>Remove image</span></button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <span class="label">Texts</span>
+        <label><span class="label">Headline (empty = event name)</span><input name="headline" maxlength="60" id="headline"></label>
+        <label><span class="label">Tagline</span><input name="tagline" maxlength="80"></label>
+        <label><span class="label">Info line on the stub</span><input name="info" maxlength="120"></label>
+        <label><span class="label">Small print</span><textarea name="terms" maxlength="600"></textarea></label>
+        <label style="flex-direction:row;align-items:center;gap:10px"><input type="checkbox" name="showPrice" style="width:22px;min-height:22px"> <span>Show the price on the ticket</span></label>
+      </section>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn small" type="submit"><span>Save &amp; update preview</span><span>→</span></button>
+        <button class="btn ghost small" type="button" id="reset"><span>Back to default texts</span></button>
+      </div>
+    </form>
+
+    <section style="flex:0 1 400px;min-width:280px;display:flex;flex-direction:column;gap:10px;position:sticky;top:120px">
+      <div class="row"><span class="label">Preview (sample tickets)</span><a class="link" id="open" href="/api/ticket-design/preview.pdf" target="_blank" rel="noopener">Open PDF ↗</a></div>
+      <div id="preview" aria-label="Ticket preview" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px"></div>
+      <p class="muted" style="font-size:13px;margin:0">Buyers get one page per ticket. They can download it from their order page and save it to the phone.</p>
+    </section>
+  </div>
+</main>
+<script>
+(async () => {
+  const { api } = Hub;
+  await Hub.start('tickets');
+  const f = Hub.$('#form');
+  let defaults;
+
+  function fill(d) {
+    f.theme.value = d.theme; f.layout.value = d.layout; f.overlay.value = d.overlay;
+    f.headline.value = d.headline; f.tagline.value = d.tagline; f.info.value = d.info; f.terms.value = d.terms;
+    f.showPrice.checked = Boolean(d.showPrice);
+    sync();
+  }
+  function sync() {
+    Hub.$('#ov-out').textContent = f.overlay.value + ' %';
+    Hub.$('#overlay-wrap').style.display = f.layout.value === 'background' ? '' : 'none';
+  }
+  // Draw every page of the preview PDF with pdf.js (works without a PDF viewer, also on phones)
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.js';
+  async function refreshPreview() {
+    const box = Hub.$('#preview');
+    const pdf = await pdfjsLib.getDocument('/api/ticket-design/preview.pdf?v=' + Date.now()).promise;
+    const canvases = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const view = page.getViewport({ scale: 2 });
+      const c = document.createElement('canvas');
+      c.width = view.width; c.height = view.height;
+      c.style.cssText = 'width:100%;max-width:340px;flex:none;border:1px solid #333';
+      c.setAttribute('aria-label', 'Ticket page ' + i);
+      await page.render({ canvasContext: c.getContext('2d'), viewport: view }).promise;
+      canvases.push(c);
+    }
+    box.replaceChildren(...canvases);
+  }
+  function refreshArt(has) {
+    const img = Hub.$('#art');
+    img.style.display = has ? '' : 'none';
+    if (has) img.src = '/api/ticket-design/artwork?v=' + Date.now();
+    Hub.$('#no-art').style.display = has ? 'none' : '';
+    Hub.$('#remove-art').hidden = !has;
+  }
+
+  const d = await api('/api/ticket-design');
+  defaults = d.defaults;
+  Hub.$('#headline').placeholder = d.event.name;
+  fill(d.design); refreshArt(d.hasArtwork); Hub.run(refreshPreview);
+
+  f.layout.onchange = sync; f.overlay.oninput = sync;
+  f.onsubmit = (e) => Hub.run(async () => {
+    e.preventDefault();
+    const body = Hub.formData(f);
+    body.showPrice = f.showPrice.checked;
+    await api('/api/ticket-design', { method: 'PUT', body });
+    Hub.toast('Saved'); Hub.run(refreshPreview);
+  });
+  Hub.$('#reset').onclick = () => { fill({ ...defaults, theme: f.theme.value, layout: f.layout.value, overlay: f.overlay.value }); Hub.toast('Default texts filled in. Save to apply.'); };
+
+  Hub.$('#file').onchange = (e) => Hub.run(async () => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) throw new Error('The image is bigger than 8 MB.');
+    const r = await fetch('/api/ticket-design/artwork', { method: 'POST', headers: { 'Content-Type': file.type }, body: file });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || 'Upload failed');
+    e.target.value = '';
+    refreshArt(true); Hub.run(refreshPreview); Hub.toast('Image uploaded');
+  });
+  Hub.$('#remove-art').onclick = () => Hub.run(async () => {
+    await api('/api/ticket-design/artwork', { method: 'DELETE' });
+    refreshArt(false); Hub.run(refreshPreview);
+  });
+})();
+</script>
+</body>
+</html>

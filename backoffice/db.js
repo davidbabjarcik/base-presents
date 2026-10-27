@@ -140,6 +140,10 @@ export function openDb(dir) {
     );
 
     -- Staff planning: one sheet per day, people per group with the hours they are there
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL                 -- JSON
+    );
     CREATE TABLE IF NOT EXISTS staff_days (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       date TEXT NOT NULL,                 -- YYYY-MM-DD
@@ -165,7 +169,22 @@ export function openDb(dir) {
   addColumn(db, 'stock_moves', 'unit_price_cents', 'INTEGER');
   addColumn(db, 'stock_moves', 'source', 'TEXT');           // supplier / who brought it
   addColumn(db, 'stock_moves', 'deal', "TEXT NOT NULL DEFAULT 'normal'"); // normal | komis | free
+  // Public sign-up for staff days
+  addColumn(db, 'staff_days', 'public_token', 'TEXT');        // secret part of the public link
+  addColumn(db, 'staff_days', 'public_open', 'INTEGER NOT NULL DEFAULT 0');
+  addColumn(db, 'staff_days', 'public_groups', 'TEXT');       // JSON list of sections people can sign up for
+  addColumn(db, 'staff_rows', 'self', 'INTEGER NOT NULL DEFAULT 0'); // 1 = person signed up via the public link
+  addColumn(db, 'staff_rows', 'edit_token', 'TEXT');          // lets that person change their own entry
   return db;
+}
+
+export function getSetting(db, key, fallback) {
+  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
+  if (!row) return fallback;
+  try { return JSON.parse(row.value); } catch { return fallback; }
+}
+export function setSetting(db, key, value) {
+  db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, JSON.stringify(value));
 }
 
 function addColumn(db, table, column, type) {

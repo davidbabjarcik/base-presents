@@ -47,6 +47,21 @@
         </div>
       </form>
     </details>
+    <section class="panel" id="pub" style="margin-bottom:24px">
+      <div class="row"><span class="label">Public sign-up</span><span class="chip" id="pub-state">Closed</span></div>
+      <p class="muted" style="margin:0;font-size:14px">Send a link and people add their own name and hours, no login needed. Each section is a separate list, e.g. Rádio 9 and ŠRJ 9.</p>
+      <form id="pub-form" class="form-row">
+        <label style="grid-column:span 2"><span class="label">Sections people can choose (comma separated)</span><input name="groups" id="pub-groups" maxlength="300" placeholder="e.g. Rádio 9, ŠRJ 9, Bar"></label>
+        <label style="flex-direction:row;align-items:center;gap:10px;min-height:44px"><input type="checkbox" name="open" id="pub-open" style="width:22px;min-height:22px"> <span>Link is open</span></label>
+        <button class="btn small" type="submit"><span>Save</span></button>
+      </form>
+      <div id="pub-link-box" hidden style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+        <input id="pub-link" readonly style="flex:1 1 260px;min-height:44px;font-size:14px" aria-label="Public sign-up link">
+        <button class="btn ghost small" type="button" id="pub-copy"><span>Copy link</span></button>
+        <a class="btn ghost small" id="pub-open-link" target="_blank" rel="noopener"><span>Open ↗</span></a>
+        <button class="btn ghost small" type="button" id="pub-new"><span>New link</span></button>
+      </div>
+    </section>
     <p class="muted" id="day-notes" style="white-space:pre-line;margin:0 0 16px"></p>
     <p class="muted" style="font-size:13px;margin:0 0 16px">Click an hour to switch it on or off. Drag across hours to fill several. The last row of each group shows how many people are there each hour.</p>
 
@@ -104,6 +119,41 @@
   const hours = list.hours;
   document.querySelectorAll('.hour-sel').forEach((s, i) => s.append(...hours.map((x) => h('option', { value: x, selected: i === 0 ? x === 16 : x === 25 }, hh(x)))));
 
+  // Public sign-up panel
+  async function loadPublic() {
+    const p = await api(`/api/staff/days/${dayId}/public`);
+    Hub.$('#pub-open').checked = p.open;
+    if (!Hub.$('#pub-groups').value) {
+      Hub.$('#pub-groups').value = (p.groups.length ? p.groups : [...new Set(data.rows.map((r) => r.grp))]).join(', ');
+    }
+    Hub.$('#pub-state').textContent = p.open ? 'Open' : 'Closed';
+    Hub.$('#pub-state').className = 'chip' + (p.open ? ' solid' : '');
+    const box = Hub.$('#pub-link-box');
+    box.hidden = !p.token;
+    box.style.display = p.token ? 'flex' : 'none';
+    if (p.token) {
+      const link = location.origin + '/join/' + p.token;
+      Hub.$('#pub-link').value = link;
+      Hub.$('#pub-open-link').href = link;
+    }
+  }
+  Hub.$('#pub-form').onsubmit = (e) => Hub.run(async () => {
+    e.preventDefault();
+    const groups = Hub.$('#pub-groups').value.split(',').map((g) => g.trim()).filter(Boolean);
+    await api(`/api/staff/days/${dayId}/public`, { method: 'PUT', body: { open: Hub.$('#pub-open').checked, groups } });
+    await load();
+    Hub.toast(Hub.$('#pub-open').checked ? 'Sign-up is open. Copy the link and send it.' : 'Saved');
+    await loadPublic();
+  });
+  Hub.$('#pub-copy').onclick = async () => {
+    try { await navigator.clipboard.writeText(Hub.$('#pub-link').value); Hub.toast('Link copied'); } catch (e) { Hub.$('#pub-link').select(); }
+  };
+  Hub.$('#pub-new').onclick = () => Hub.run(async () => {
+    if (!confirm('Make a new link? The old link stops working.')) return;
+    await api(`/api/staff/days/${dayId}/public/new-link`, { method: 'POST' });
+    await loadPublic(); Hub.toast('New link ready');
+  });
+
   async function load() {
     data = await api('/api/staff/days/' + dayId);
     const d = data.day;
@@ -113,9 +163,13 @@
     Hub.$('#day-notes').textContent = d.notes || '';
     const f = Hub.$('#day-form');
     f.date.value = d.date; f.title.value = d.title; f.event_id.value = d.event_id || ''; f.notes.value = d.notes || '';
-    const groups = [...new Set([...data.groups, ...data.rows.map((r) => r.grp)])];
-    Hub.$('#group-list').replaceChildren(...groups.map((g) => h('option', { value: g })));
-    Hub.$('#groups').replaceChildren(...groups.filter((g) => data.groups.includes(g) || data.rows.some((r) => r.grp === g)).map((g) => groupTable(g, data.rows.filter((r) => r.grp === g))));
+    // Sections: the ones with people + the public sign-up ones; the default Prep/Bar/Radio only on an empty day
+    const pub = (await api(`/api/staff/days/${dayId}/public`)).groups;
+    let groups = [...new Set([...pub, ...data.rows.map((r) => r.grp)])];
+    if (!groups.length) groups = data.groups;
+    const suggestions = [...new Set([...groups, ...data.groups])];
+    Hub.$('#group-list').replaceChildren(...suggestions.map((g) => h('option', { value: g })));
+    Hub.$('#groups').replaceChildren(...groups.map((g) => groupTable(g, data.rows.filter((r) => r.grp === g))));
   }
 
   // Drag-to-paint hours
@@ -157,7 +211,7 @@
         h('tbody', {}, rows.map((r) => {
           const set = new Set(r.hours);
           return h('tr', {},
-            h('td', { class: 'who' }, h('input', { value: r.person, 'aria-label': 'Name', onchange: (e) => Hub.run(async () => { await api('/api/staff/rows/' + r.id, { method: 'PUT', body: { person: e.target.value } }); await load(); }) })),
+            h('td', { class: 'who', title: r.self ? 'Signed up via the public link' : null }, r.self ? h('span', { class: 'chip', style: 'margin-right:4px;padding:2px 5px' }, 'self') : null, h('input', { value: r.person, 'aria-label': 'Name', onchange: (e) => Hub.run(async () => { await api('/api/staff/rows/' + r.id, { method: 'PUT', body: { person: e.target.value } }); await load(); }) })),
             hours.map((x) => h('td', {
               class: 'cell' + (set.has(x) ? ' on' : ''), 'data-h': x, role: 'checkbox', tabindex: '0', 'aria-checked': String(set.has(x)), 'aria-label': `${r.person} ${hh(x)}`,
               onpointerdown: (e) => {
@@ -207,6 +261,8 @@
     location.href = '/staff';
   });
   await load();
+  await loadPublic();
+  setInterval(() => { if (!paint && !document.activeElement?.matches('input,textarea,select')) Hub.run(load); }, 20000); // pick up new public sign-ups
 })();
 </script>
 </body>

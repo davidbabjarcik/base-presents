@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Staff sign-up · Base Presents</title>
+<link rel="icon" href="/assets/favicon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css">
+<style>
+.wrap{max-width:640px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips label{flex-direction:row;cursor:pointer}
+.chips input{position:absolute;opacity:0;width:1px;height:1px}
+.chips span{display:inline-flex;align-items:center;min-height:48px;padding:0 18px;border:1px solid #fff;font-weight:600}
+.chips input:checked + span{background:#fff;color:#000}
+.chips input:focus-visible + span{outline:2px solid #fff;outline-offset:2px}
+.hours{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:6px;touch-action:none;user-select:none}
+.hours button{min-height:48px;border:1px solid #444;background:#000;color:#A3A3A3;font:500 14px 'JetBrains Mono',monospace;cursor:pointer}
+.hours button.on{background:#fff;color:#000;border-color:#fff}
+.hours button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.quick{display:flex;flex-wrap:wrap;gap:8px;align-items:end}
+.quick label{flex:1 1 100px}
+.who{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.who li{display:grid;grid-template-columns:minmax(90px,140px) 1fr;gap:10px;align-items:center;font-size:14px}
+.who .bar{display:grid;grid-template-columns:repeat(19,1fr);gap:1px;height:12px}
+.who .bar i{background:#1f1f1f}
+.who .bar i.on{background:#fff}
+.done{border:2px solid #fff;padding:20px;display:flex;flex-direction:column;gap:12px}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+</style>
+</head>
+<body>
+<header class="top"><img src="/assets/base-logo-white.png" alt="Base Presents"><span class="badge">Staff sign-up</span></header>
+<main class="wrap" style="display:flex;flex-direction:column;gap:24px">
+  <div>
+    <span class="label" id="when">…</span>
+    <h1 id="title" style="margin:8px 0 8px">Loading…</h1>
+    <p class="muted" id="notes" style="white-space:pre-line;margin:0"></p>
+  </div>
+
+  <p class="msg err" id="closed" hidden></p>
+
+  <form id="form" class="card" style="max-width:none" novalidate hidden>
+    <h2 id="form-title" style="font-size:22px">Sign up</h2>
+    <fieldset style="border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:10px">
+      <legend class="label" style="margin-bottom:10px">Section</legend>
+      <div class="chips" id="groups"></div>
+    </fieldset>
+    <label><span class="label">Your name</span><input id="person" autocomplete="name" maxlength="40" required></label>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span class="label">When can you be there? Tap the hours (or drag across them)</span>
+      <div class="quick">
+        <label><span class="label">From</span><select id="from"></select></label>
+        <label><span class="label">To</span><select id="to"></select></label>
+        <button class="btn ghost" type="button" id="fill" style="width:auto;min-height:52px"><span>Fill</span></button>
+        <button class="btn ghost" type="button" id="clear" style="width:auto;min-height:52px"><span>Clear</span></button>
+      </div>
+      <div class="hours" id="hours" role="group" aria-label="Hours"></div>
+    </div>
+    <label><span class="label">Note (optional)</span><input id="note" maxlength="150" placeholder="e.g. I can only stay until midnight"></label>
+    <div class="hp" aria-hidden="true"><label>Website <input id="website" tabindex="-1" autocomplete="off"></label></div>
+    <p class="msg" id="msg" role="status"></p>
+    <button class="btn" type="submit" id="submit"><span>Sign me up</span><span>→</span></button>
+    <button class="btn ghost" type="button" id="remove" hidden><span>Remove my sign-up</span></button>
+  </form>
+
+  <section class="done" id="done" hidden>
+    <h2 style="font-size:24px">You're in! 🙌</h2>
+    <p style="margin:0">Save this link. With it you can change your times later:</p>
+    <input id="edit-link" readonly style="font-size:14px">
+    <button class="btn ghost" type="button" id="copy"><span>Copy link</span></button>
+  </section>
+
+  <section id="list-box" hidden>
+    <h2 style="font-size:22px;margin-bottom:12px">Who signed up</h2>
+    <div id="list" style="display:flex;flex-direction:column;gap:20px"></div>
+  </section>
+</main>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const h = (tag, attrs, ...kids) => {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) { if (v === false || v == null) continue; if (k === 'class') el.className = v; else el.setAttribute(k, v === true ? '' : v); }
+    kids.flat().forEach((k) => k != null && el.append(k.nodeType ? k : String(k)));
+    return el;
+  };
+  const hh = (x) => String(x % 24).padStart(2, '0') + ':00';
+  const token = location.pathname.split('/').pop();
+  const editToken = new URLSearchParams(location.search).get('me');
+  const API = '/api/join/' + encodeURIComponent(token);
+  let HOURS = [], picked = new Set();
+
+  const store = { get() { try { return localStorage.getItem('bp-join-' + token); } catch (e) { return null; } },
+                  set(v) { try { localStorage.setItem('bp-join-' + token, v); } catch (e) {} } };
+
+  function range(set) {
+    const s = [...set].sort((a, b) => a - b);
+    if (!s.length) return '—';
+    const parts = []; let a = s[0], p = s[0];
+    for (const x of s.slice(1).concat([null])) {
+      if (x === p + 1) { p = x; continue; }
+      parts.push(a === p ? hh(a) : `${hh(a)}–${hh(p + 1)}`);
+      a = p = x;
+    }
+    return parts.join(', ');
+  }
+
+  // Hour buttons with tap + drag
+  let paint = null;
+  function drawHours() {
+    $('hours').replaceChildren(...HOURS.map((x) => h('button', { type: 'button', 'data-h': x, class: picked.has(x) ? 'on' : null, 'aria-pressed': String(picked.has(x)) }, hh(x).slice(0, 5))));
+  }
+  function setHour(btn, on) {
+    const x = Number(btn.dataset.h);
+    on ? picked.add(x) : picked.delete(x);
+    btn.classList.toggle('on', on); btn.setAttribute('aria-pressed', String(on));
+  }
+  $('hours').addEventListener('pointerdown', (e) => {
+    const b = e.target.closest('button[data-h]'); if (!b) return;
+    e.preventDefault(); b.releasePointerCapture?.(e.pointerId);
+    paint = !picked.has(Number(b.dataset.h)); setHour(b, paint);
+  });
+  window.addEventListener('pointermove', (e) => {
+    if (paint === null) return;
+    const b = document.elementFromPoint(e.clientX, e.clientY)?.closest('#hours button[data-h]');
+    if (b) setHour(b, paint);
+  });
+  window.addEventListener('pointerup', () => { paint = null; });
+  $('hours').addEventListener('keydown', (e) => {
+    const b = e.target.closest('button[data-h]');
+    if (b && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); setHour(b, !picked.has(Number(b.dataset.h))); }
+  });
+  $('fill').onclick = () => {
+    const a = Number($('from').value), b = Number($('to').value);
+    HOURS.filter((x) => x >= Math.min(a, b) && x <= Math.max(a, b)).forEach((x) => picked.add(x));
+    drawHours();
+  };
+  $('clear').onclick = () => { picked.clear(); drawHours(); };
+
+  function renderList(data) {
+    $('list-box').hidden = !data.rows.length;
+    $('list').replaceChildren(...data.groups.map((g) => {
+      const rows = data.rows.filter((r) => r.grp === g);
+      return h('div', {},
+        h('span', { class: 'label' }, `${g} · ${rows.length}`),
+        rows.length ? h('ul', { class: 'who', style: 'margin-top:8px' }, rows.map((r) => {
+          const set = new Set(r.hours);
+          return h('li', { title: range(set) }, h('span', {}, r.person),
+            h('span', { class: 'bar', 'aria-label': range(set) }, HOURS.map((x) => h('i', { class: set.has(x) ? 'on' : null }))));
+        })) : h('p', { class: 'muted', style: 'margin:6px 0 0;font-size:14px' }, 'Nobody yet.'));
+    }));
+  }
+
+  function showDone(edit) {
+    const link = location.origin + location.pathname + '?me=' + edit;
+    store.set(edit);
+    $('edit-link').value = link;
+    $('done').hidden = false;
+  }
+  $('copy').onclick = async () => {
+    try { await navigator.clipboard.writeText($('edit-link').value); $('copy').firstElementChild.textContent = 'Copied ✓'; }
+    catch (e) { $('edit-link').select(); }
+  };
+
+  async function load() {
+    const r = await fetch(API);
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      $('title').textContent = 'Sign-up closed';
+      $('closed').hidden = false; $('closed').textContent = data.error || 'This link does not work.';
+      return null;
+    }
+    HOURS = data.hours;
+    const d = data.day;
+    document.title = d.title + ' · Staff sign-up';
+    $('title').textContent = d.title;
+    $('when').textContent = new Date(d.date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + (d.event ? ' · ' + d.event : '');
+    $('notes').textContent = d.notes || '';
+    if (!$('groups').children.length) {
+      $('groups').append(...data.groups.map((g, i) => h('label', {}, h('input', { type: 'radio', name: 'grp', value: g, checked: i === 0 && data.groups.length === 1 }), h('span', {}, g))));
+      ['from', 'to'].forEach((id, i) => $(id).append(...HOURS.map((x) => h('option', { value: x, selected: i === 0 ? x === 16 : x === 25 }, hh(x)))));
+    }
+    renderList(data);
+    return data;
+  }
+
+  (async () => {
+    const data = await load();
+    if (!data) return;
+    $('form').hidden = false;
+    drawHours();
+    const mine = editToken || null;
+    if (mine) {
+      const r = await fetch(`${API}/me/${encodeURIComponent(mine)}`);
+      if (r.ok) {
+        const me = await r.json();
+        picked = new Set(me.hours); drawHours();
+        $('person').value = me.person; $('person').disabled = true;
+        $('note').value = me.note;
+        document.querySelectorAll('#groups input').forEach((i) => { i.checked = i.value === me.grp; i.disabled = true; });
+        $('form-title').textContent = 'Change your times';
+        $('submit').firstElementChild.textContent = 'Save changes';
+        $('remove').hidden = false;
+        store.set(mine);
+      }
+    } else if (store.get()) {
+      $('msg').textContent = 'You already signed up on this device. ';
+      $('msg').append(h('a', { href: location.pathname + '?me=' + store.get() }, 'Change your times →'));
+    }
+  })();
+
+  $('form').onsubmit = async (e) => {
+    e.preventDefault();
+    $('msg').className = 'msg'; $('msg').textContent = '';
+    const grp = document.querySelector('#groups input:checked')?.value;
+    const body = { grp, person: $('person').value, hours: [...picked], note: $('note').value, website: $('website').value };
+    $('submit').disabled = true;
+    try {
+      const r = await fetch(editToken ? `${API}/me/${encodeURIComponent(editToken)}` : API, {
+        method: editToken ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || 'Something went wrong.');
+      if (editToken) { $('msg').textContent = 'Saved ✓'; }
+      else { $('form').hidden = true; showDone(data.editToken); }
+      await load();
+    } catch (err) {
+      $('msg').className = 'msg err'; $('msg').textContent = err.message;
+    } finally { $('submit').disabled = false; }
+  };
+
+  $('remove').onclick = async () => {
+    if (!confirm('Remove your sign-up?')) return;
+    await fetch(`${API}/me/${encodeURIComponent(editToken)}`, { method: 'DELETE' });
+    try { localStorage.removeItem('bp-join-' + token); } catch (e) {}
+    location.href = location.pathname;
+  };
+})();
+</script>
+</body>
+</html>

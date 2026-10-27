@@ -322,7 +322,7 @@ export function registerHub(app, { db, auth }) {
     const day = db.prepare('SELECT d.*, e.name AS event FROM staff_days d LEFT JOIN events e ON e.id = d.event_id WHERE d.id = ?').get(Number(req.params.id));
     if (!day) return res.status(404).json({ error: 'Not found' });
     const rows = db.prepare('SELECT * FROM staff_rows WHERE day_id = ? ORDER BY sort, id').all(day.id);
-    res.json({ day, rows: rows.map((r) => ({ ...r, hours: r.hours ? r.hours.split(',').map(Number) : [] })), groups: STAFF_GROUPS, hours: HOURS });
+    res.json({ day, rows: rows.map(({ edit_token, ...r }) => ({ ...r, hours: r.hours ? r.hours.split(',').map(Number) : [] })), groups: STAFF_GROUPS, hours: HOURS });
   });
   app.post('/api/staff/days', need('staff'), (req, res) => {
     const date = isDate(req.body.date) ? req.body.date : null;

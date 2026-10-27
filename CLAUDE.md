@@ -16,7 +16,10 @@ Open `index.html` directly in a browser — no build step.
 `cd backoffice && npm install && npm start` → http://localhost:4242/login. Sections: ticket sales (Stripe Checkout TEST mode
 or demo payment, QR tickets, `/scan` door scanner), stock alko/nealko/material (volume, unit price, stock value,
 orders incl. komis/free, stocktakes), staff planning (`/staff`: per-day hour grid 07–01 by group Prep/Bar/Radio),
-promo calendar, event & bar stats, event ideas (pros/cons, votes), users. Roles admin / tickets / team (`ACCESS` in `backoffice/auth.js`).
+promo calendar, event & bar stats, event ideas (pros/cons, votes), users.
+PDF tickets: `ticketpdf.js` (pdfkit, phone-shaped page, vector QR), buyer download `/order/:id/tickets.pdf`,
+design settings in `/ticket-design` (stored in `settings` table, artwork in `backoffice/data/uploads/`).
+Public staff sign-up: `signup.js`, link `/join/<token>` per staff day with chosen sections; rows get `self = 1`. Roles admin / tickets / team (`ACCESS` in `backoffice/auth.js`).
 Accounts are seeded from `backoffice/.env` on first start (not committed); logins are listed in `README.md` and
 `backoffice/README.md`. Data lives in `backoffice/data/base.db` (not committed). Demo rows have `demo = 1`.
 Internal UI copy is English. Full docs (Slovak): `backoffice/README.md`. The public site sells tickets through it and links to its login.

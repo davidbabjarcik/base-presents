@@ -45,3 +45,6 @@ th{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;te
 .result strong{display:block;font-family:Montserrat,Inter,sans-serif;font-size:40px;text-transform:uppercase;line-height:1;margin-bottom:8px}
 #reader{width:100%;max-width:420px;background:#141414;min-height:40px}
 .hidden{display:none !important}
+
+/* The hidden attribute always wins over display rules */
+[hidden]{display:none !important}
