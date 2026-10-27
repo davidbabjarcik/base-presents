@@ -8,6 +8,8 @@ The site copy is in English. The user (Dejvo) talks in Slovak — reply in Slova
 - `assets/base-logo-white.png` — the BASE logo, white on transparent (1955×622). Used in the nav, hero and footer
 - `favicon.ico`, `assets/favicon-32.png`, `assets/favicon-512.png`, `assets/apple-touch-icon.png` — favicons (white "B" from the logo on black)
 - `assets/og-image.png` — 1200×630 social share preview (Open Graph)
+- `gallery.html` — photo reports: list of albums, or one album with lightbox (`?a=<slug>`, `#n` = open photo n)
+- `photos/albums.json` + `photos/<slug>/` (web JPGs, `thumbs/`, `album.json`) — photo reports, made by `tools/add-album.mjs` (sharp; strips metadata). The Archive section shows the latest 3 albums
 - `assets/archive/*.jpg` — 6 archive photos (432×540, cropped from the BASE project report slides, so low-res). Shown grayscale, color on hover. Swap for full-res originals when available
 
 Open `index.html` directly in a browser — no build step.
@@ -55,5 +57,5 @@ Team login: "Login" in the nav and "Team login →" in the footer link to `TICKE
 
 ## Still placeholders (text in [square brackets])
 Chodbovica 5 line-up ("Line-up announced soon"),
-contact emails and phone, social media links. The newsletter form has no backend yet.
+contact emails and phone, TikTok link (Instagram https://www.instagram.com/base.presents/ and Facebook https://www.facebook.com/BASEPresentsSlovakia are linked). The newsletter form has no backend yet.
 The Open Graph `og:url` / `og:image` use `https://basepresents.sk/` as a guess: change it to the real domain.

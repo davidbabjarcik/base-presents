@@ -1,0 +1,12 @@
+{
+  "name": "base-presents-tools",
+  "private": true,
+  "description": "Helper scripts for the Base Presents website (photo reports)",
+  "type": "module",
+  "scripts": {
+    "album": "node add-album.mjs"
+  },
+  "dependencies": {
+    "sharp": "^0.35.5"
+  }
+}

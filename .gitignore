@@ -12,3 +12,6 @@ Thumbs.db
 backoffice/node_modules/
 backoffice/.env
 backoffice/data/
+
+# Tools
+tools/node_modules/

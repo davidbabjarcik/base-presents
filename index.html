@@ -68,6 +68,15 @@ article[aria-label^="Chillout 10"]:hover [aria-hidden="true"]{color:#000 !import
 .bp-archive figcaption{position:absolute;left:0;right:0;bottom:0;padding:48px 16px 14px;background:linear-gradient(transparent,rgba(0,0,0,.75));font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#fff}
 @media (max-width:720px){.bp-archive figcaption{font-size:10px;padding:32px 10px 10px;letter-spacing:.1em}}
 .bp-track:hover{animation-play-state:paused}
+#bp-albums[hidden]{display:none !important}
+.bp-albums-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:16px}
+.bp-album{display:flex;flex-direction:column;gap:10px}
+.bp-album .img{aspect-ratio:4/3;overflow:hidden;background:#141414}
+.bp-album img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(1) contrast(1.1);transition:filter .6s,transform .9s var(--ease)}
+.bp-album:hover img{filter:none;transform:scale(1.03)}
+.bp-album:hover{opacity:1}
+.bp-album b{font-family:Montserrat,Inter,sans-serif;font-weight:700;font-size:22px;text-transform:uppercase;line-height:1.05}
+.bp-album span{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#A3A3A3}
 #bp-buy input:focus,#bp-buy button:focus-visible{outline:2px solid #fff;outline-offset:2px}
 #bp-buy button:disabled{opacity:.35;cursor:not-allowed}
 #bp-buy #bp-minus:hover:not(:disabled),#bp-buy #bp-plus:hover:not(:disabled){background:#141414}
@@ -313,7 +322,7 @@ article[aria-label^="Chillout 10"]:hover [aria-hidden="true"]{color:#000 !import
 <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #A3A3A3">Past editions</span>
 <h2 style="margin: 0; font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: clamp(44px, 6.5vw, 92px); line-height: 0.95; letter-spacing: -0.02em; text-transform: uppercase">Archive</h2>
 </div>
-<a href="#contact" style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; padding: 12px 0; border-bottom: 1px solid #FFFFFF">More on Instagram →</a>
+<a href="https://www.instagram.com/base.presents/" target="_blank" rel="noopener" style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; padding: 12px 0; border-bottom: 1px solid #FFFFFF">More on Instagram ↗</a>
 </div>
 <div class="bp-archive">
 <figure><img src="assets/archive/chodbovica-dj.jpg" alt="DJ behind the decks in purple light at Chodbovica" loading="lazy" width="432" height="540"><figcaption>CHODBOVICA · Jedlíkova 7</figcaption></figure>
@@ -322,6 +331,14 @@ article[aria-label^="Chillout 10"]:hover [aria-hidden="true"]{color:#000 !import
 <figure><img src="assets/archive/chillout-dj.jpg" alt="DJ under blue stage lights at the Chillout open-air" loading="lazy" width="432" height="540"><figcaption>CHILLOUT · Jedlíkova 9</figcaption></figure>
 <figure><img src="assets/archive/chodbovica-dance.jpg" alt="Dancing in red light at Chodbovica" loading="lazy" width="432" height="540"><figcaption>CHODBOVICA · Jedlíkova 7</figcaption></figure>
 <figure><img src="assets/archive/chillout-chairs.jpg" alt="A couple in deck chairs on the grass at Chillout" loading="lazy" width="432" height="540"><figcaption>CHILLOUT · Jedlíkova 9</figcaption></figure>
+</div>
+<!-- Photo reports: filled from photos/albums.json (add albums with tools/add-album.mjs) -->
+<div id="bp-albums" hidden style="display: flex; flex-direction: column; gap: 20px; padding-top: 32px; border-top: 1px solid #262626">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px">
+<h3 style="margin: 0; font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: clamp(28px, 3.6vw, 44px); line-height: 1; letter-spacing: -0.01em; text-transform: uppercase">Photo reports</h3>
+<a href="gallery.html" style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; padding: 12px 0; border-bottom: 1px solid #FFFFFF">All photo reports →</a>
+</div>
+<div class="bp-albums-grid"></div>
 </div>
 </div>
 </section>
@@ -357,8 +374,8 @@ article[aria-label^="Chillout 10"]:hover [aria-hidden="true"]{color:#000 !import
 <div style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 10px">
 <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #A3A3A3">Follow us</span>
 <div style="display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 18px; font-weight: 500">
-<a href="#" style="padding: 4px 0">Instagram</a>
-<a href="#" style="padding: 4px 0">Facebook</a>
+<a href="https://www.instagram.com/base.presents/" target="_blank" rel="noopener" style="padding: 4px 0">Instagram ↗</a>
+<a href="https://www.facebook.com/BASEPresentsSlovakia" target="_blank" rel="noopener" style="padding: 4px 0">Facebook ↗</a>
 <a href="#" style="padding: 4px 0">TikTok</a>
 </div>
 </div>
@@ -471,6 +488,34 @@ article[aria-label^="Chillout 10"]:hover [aria-hidden="true"]{color:#000 !import
       }
     };
     render();
+  })();
+
+  // ---- Photo reports in the Archive (latest 3 albums) ----
+  (function () {
+    const box = document.getElementById('bp-albums');
+    if (!box || location.protocol === 'file:') return; // needs a web server (GitHub Pages / localhost)
+    fetch('photos/albums.json', { cache: 'no-cache' })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list) => {
+        if (!list.length) return;
+        const grid = box.querySelector('.bp-albums-grid');
+        list.slice(0, 3).forEach((a) => {
+          const link = document.createElement('a');
+          link.className = 'bp-album';
+          link.href = 'gallery.html?a=' + encodeURIComponent(a.slug);
+          const wrap = document.createElement('div'); wrap.className = 'img';
+          const img = document.createElement('img');
+          img.src = 'photos/' + a.slug + '/thumbs/' + a.cover.f; img.alt = a.title; img.loading = 'lazy';
+          wrap.append(img);
+          const meta = document.createElement('span');
+          meta.textContent = new Date(a.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ' · ' + a.count + ' photos';
+          const title = document.createElement('b'); title.textContent = a.title;
+          link.append(wrap, meta, title);
+          grid.append(link);
+        });
+        box.hidden = false;
+      })
+      .catch(() => {});
   })();
 
   // ---- Animations ----
