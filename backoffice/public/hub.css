@@ -84,3 +84,19 @@ td .icon-btn{min-width:36px;min-height:36px}
 .pm li .who{color:#666;font-size:12px}
 .pm form{display:flex;gap:6px;margin-top:6px}
 .pm form input{min-height:40px;font-size:14px}
+
+/* Staff shift grid */
+table.shift{border-collapse:collapse;font-size:13px;min-width:100%}
+table.shift th,table.shift td{border-bottom:1px solid #1f1f1f;padding:0}
+table.shift th{padding:6px 2px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-align:center;font-weight:400}
+table.shift .who{min-width:150px;padding-right:8px;text-align:left}
+table.shift input{min-height:36px;border:1px solid transparent;background:transparent;font-size:14px;padding:0 6px}
+table.shift input:hover,table.shift input:focus{border-color:#555}
+table.shift input.note{min-width:160px;color:var(--muted)}
+table.shift .cell{width:30px;min-width:30px;height:34px;cursor:pointer;border-left:1px solid #1a1a1a;user-select:none;touch-action:none}
+table.shift .cell:hover{background:#262626}
+table.shift .cell.on{background:#fff}
+table.shift .cell:focus-visible{outline:2px solid #fff;outline-offset:-2px}
+table.shift .cnt{text-align:center;font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 0;color:#fff}
+table.shift .cnt.zero{color:#444}
+table.shift tfoot td{border-top:1px solid #333}

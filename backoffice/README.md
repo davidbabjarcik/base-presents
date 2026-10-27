@@ -10,7 +10,8 @@ Interná aplikácia pre tím Base Presents. **Prototyp**: beží u teba na poč�
 | Prehľad | `/app` | najbližší event, predané lístky, nízky sklad, najbližšie promo, top nápady, posledný event |
 | Lístky | `/tickets` | predaj lístkov: predané, zostáva, tržba, koľko ľudí prišlo, objednávky |
 | Skener | `/scan` | kontrola lístkov pri vstupe (kamera alebo ručne zadaný kód) |
-| Sklad | `/stock` | alko / nealko: stav, minimum, nákup, výdaj na event, straty, inventúra, história |
+| Sklad | `/stock` | alko / nealko / materiál: stav, objem, cena za kus, hodnota skladu, odbery (aj komis a free), výdaj na event, straty, inventúra, história |
+| Staff | `/staff` | rozpis ľudí po hodinách (07:00–01:00) na každý deň: príprava, bar, rádio… |
 | Promo | `/promo` | promo kalendár: čo, kde (Instagram, TikTok, plagáty…), kedy, kto, stav |
 | Štatistiky | `/stats` | porovnanie eventov: počet ľudí, počet barov, tržby barov, € na hosťa, najlepší bar a produkt |
 | Nápady | `/ideas` | nápady na nové eventy: prečo, plusy a mínusy, hlasovanie, stav |
@@ -25,7 +26,7 @@ Interná aplikácia pre tím Base Presents. **Prototyp**: beží u teba na poč�
 |---|---|---|---|
 | **Admin** | `base@base.com` | `admin` | všetko + správa účtov a demo dát |
 | **Lístky** | `listky@base.com` | `baselistky` | lístky, skener, promo, nápady |
-| **Staff (tím)** | `staff@base.com` | `basestaff` | sklad, promo, štatistiky, nápady |
+| **Staff (tím)** | `staff@base.com` | `basestaff` | sklad, staff rozpis, promo, štatistiky, nápady |
 
 - Účty sa vytvoria pri **prvom spustení** z `backoffice/.env`. Ďalších ľudí pridáš v **Účty** (`/users`) ako admin.
 - Heslá sa dajú zmeniť v **Účty**. Zmena v `.env` už existujúci účet nezmení.
@@ -88,14 +89,28 @@ Kamera v skeneri funguje len na `localhost` alebo cez `https://`. Inak treba kó
 
 Stripe test kľúč: na stripe.com si vytvor účet, zapni **Test mode** → Developers → API keys → skopíruj **Secret key** do `STRIPE_SECRET_KEY` a reštartuj server.
 
-### Sklad (alko / nealko)
-- **Položky**: názov, alko/nealko, jednotka (ks, fľ., sud, bal., l, kg), **minimum**. Keď stav klesne pod minimum, riadok sa zvýrazní ⚠ a ukáže sa aj na Prehľade.
-- **Pohyb** (každá zmena sa zapíše do histórie aj s menom, kto ju urobil):
-  - *Purchase / delivery (+)*: prišiel tovar
+### Sklad (alko / nealko / materiál)
+- **Hore**: hodnota skladu spolu a zvlášť alko / nealko (stav × posledná cena za kus).
+- **Položky**: názov, typ (alko, nealko, **materiál**: stany, plachty, reťaze, vrecia, poháre…), **objem v litroch** (0,7 / 1 / 0,25…), jednotka (ks, fľ., sud, bal., karton, l, kg, m), **cena za kus**, **minimum**, poznámka. Rovnaký názov s iným objemom je iná položka (Jägermeister 0,7 l a 1 l).
+- Keď stav klesne pod minimum, riadok sa zvýrazní ⚠ a ukáže sa aj na Prehľade.
+- Stav môže byť aj desatinný (0,5 = načatá fľaša).
+- **Pohyb** (každá zmena sa zapíše do histórie s dátumom a menom, kto ju zadal):
+  - *Order / delivery (+)*: odber. Zadáš **cenu za kus**, **od koho** (Metro, dodávateľ, náš sklad…) a **dohodu**: *Bought* (kúpené), *Komis* (nepredané sa vracia) alebo *Free* (zadarmo od partnera). Cena sa uloží ako nová cena položky.
   - *Used at an event (−)*: minulo sa na evente (vyberieš ktorom)
-  - *Loss / broken (−)*: rozbité, stratené
-  - *Stocktake (=)*: inventúra, zadáš, koľko reálne napočítaš, a stav sa prepíše
+  - *Loss / broken / promo (−)*: rozbité, stratené, dané na promo
+  - *Stocktake (=)*: inventúra / čo ostalo. Zadáš, koľko reálne napočítaš, a stav sa prepíše.
+- Dátum pohybu sa dá zmeniť (napr. keď zapisuješ odber spätne).
+- **História** sa dá filtrovať (odbery, eventy, straty, inventúry). Pri odberoch je súčet ceny (bez free). Tlačidlo **↺** pohyb vráti (stav sa vráti späť).
 - Nedá sa vydať viac, ako je na sklade.
+
+### Staff (rozpis ľudí)
+- Každý **deň** má vlastný rozpis: dátum, názov (napr. „Chodbovica 5 · event day“), event a poznámky (porady, štart…).
+- Ľudia sú v **skupinách**: *Prep* (príprava), *Bar*, *Radio*. Dá sa napísať aj vlastná skupina (napr. *Baby*, *Security*).
+- Pri každom človeku je mriežka hodín **07:00 až 01:00**. **Klikni** na hodinu = je tam / nie je tam. **Ťahaj** myšou alebo prstom cez viac hodín a vyplní ich naraz.
+- Spodný riadok každej skupiny ukazuje, **koľko ľudí je tam v danú hodinu**.
+- Pri človeku sa dá písať poznámka (napr. „operatívne“, „len poobede“). Meno a poznámka sa uložia, keď klikneš mimo poľa.
+- **Nový deň** sa dá vytvoriť prázdny alebo ako **kópia** iného dňa (rovnakí ľudia aj hodiny). V detaile dňa je aj *Duplicate day*.
+- Mená sa pri písaní ponúkajú z ľudí, ktorí už boli v niektorom rozpise.
 
 ### Promo kalendár
 - Mesačný kalendár (na mobile zoznam). Eventy sú označené bielou čiarou.
@@ -123,11 +138,11 @@ Eventy z project reportu (Chodbovica 1–5 s dátumami a miestami, dva Chillouty
 - **Demo dáta**: tlačidlo *Remove demo data* zmaže ukážkové čísla, sklad, promo príspevky a ukážkový nápad. Skutočné eventy a všetko, čo ste zadali vy, ostane.
 
 ### Roly
-| Rola | Lístky + skener | Sklad | Promo | Štatistiky | Nápady | Účty |
-|---|---|---|---|---|---|---|
-| Admin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Ticket sales (Lístky) | ✓ | – | ✓ | – | ✓ | – |
-| Team (Staff) | – | ✓ | ✓ | ✓ | ✓ | – |
+| Rola | Lístky + skener | Sklad | Staff | Promo | Štatistiky | Nápady | Účty |
+|---|---|---|---|---|---|---|---|
+| Admin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Ticket sales (Lístky) | ✓ | – | – | ✓ | – | ✓ | – |
+| Team (Staff) | – | ✓ | ✓ | ✓ | ✓ | ✓ | – |
 
 Zmena, kto čo vidí: `ACCESS` v `auth.js`.
 
@@ -140,7 +155,7 @@ Zmena, kto čo vidí: `ACCESS` v `auth.js`.
 - `db.js`: tabuľky a pomocné funkcie
 - `auth.js`: účty, heslá (scrypt hash), prihlásenie (HttpOnly cookie, sessions v DB), roly
 - `tickets.js`: predaj lístkov, Stripe Checkout, demo platba, QR lístky, check-in
-- `hub.js`: API pre sklad, promo, eventy/bary/štatistiky, nápady, účty
+- `hub.js`: API pre sklad, staff rozpis, promo, eventy/bary/štatistiky, nápady, účty
 - `demo.js`: skutočné eventy z reportu + demo dáta (označené `demo = 1`)
 - `public/`: stránky (čisté HTML + JS). Spoločná hlavička, navigácia a pomocné funkcie sú v `public/hub.js` a `public/hub.css`.
 

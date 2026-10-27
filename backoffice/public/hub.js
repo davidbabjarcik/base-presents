@@ -5,6 +5,7 @@
     ['tickets', '/tickets', 'Tickets'],
     ['tickets', '/scan', 'Scanner'],
     ['stock', '/stock', 'Stock'],
+    ['staff', '/staff', 'Staff'],
     ['promo', '/promo', 'Promo'],
     ['stats', '/stats', 'Stats'],
     ['ideas', '/ideas', 'Ideas'],

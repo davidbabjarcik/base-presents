@@ -12,6 +12,7 @@ export const ROLES = {
 export const ACCESS = {
   tickets: ['admin', 'tickets'],
   stock: ['admin', 'team'],
+  staff: ['admin', 'team'],
   promo: ['admin', 'tickets', 'team'],
   stats: ['admin', 'team'],
   ideas: ['admin', 'tickets', 'team'],

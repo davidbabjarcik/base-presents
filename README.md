@@ -5,7 +5,7 @@ Projekt Base Presents z Košíc (Chodbovica, Chillout). Má dve časti:
 | Časť | Priečinok | Čo to je |
 |---|---|---|
 | **Web** | `index.html`, `assets/` | verejná jednostránková stránka. Lístky sa predávajú **priamo na webe cez náš ticketing** (BASE Hub). V menu je **Login** pre tím. |
-| **BASE Hub** | `backoffice/` | interný systém pre tím: lístky + skener, sklad alko/nealko, promo kalendár, štatistiky eventov a barov, nápady na eventy, účty. Beží lokálne cez Node.js. |
+| **BASE Hub** | `backoffice/` | interný systém pre tím: lístky + skener, sklad alko/nealko/materiál, staff rozpis po hodinách, promo kalendár, štatistiky eventov a barov, nápady na eventy, účty. Beží lokálne cez Node.js. |
 
 ## BASE Hub — rýchly štart
 
@@ -32,7 +32,7 @@ Aby fungoval nákup lístkov na webe, **musí bežať aj BASE Hub**. Inak formul
 |---|---|---|---|
 | Admin | `base@base.com` | `admin` | všetko |
 | Lístky | `listky@base.com` | `baselistky` | lístky, skener, promo, nápady |
-| Staff | `staff@base.com` | `basestaff` | sklad, promo, štatistiky, nápady |
+| Staff | `staff@base.com` | `basestaff` | sklad, staff rozpis, promo, štatistiky, nápady |
 
 ⚠️ Heslá sú len na skúšanie lokálne. Pred spustením na internete ich zmeň.
 

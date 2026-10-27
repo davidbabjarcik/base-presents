@@ -138,8 +138,39 @@ export function openDb(dir) {
       value INTEGER NOT NULL,             -- 1 or -1
       PRIMARY KEY (idea_id, user_id)
     );
+
+    -- Staff planning: one sheet per day, people per group with the hours they are there
+    CREATE TABLE IF NOT EXISTS staff_days (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL,                 -- YYYY-MM-DD
+      title TEXT NOT NULL,
+      event_id INTEGER REFERENCES events(id) ON DELETE SET NULL,
+      notes TEXT,
+      created_at INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS staff_rows (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      day_id INTEGER NOT NULL REFERENCES staff_days(id) ON DELETE CASCADE,
+      grp TEXT NOT NULL,                  -- Prep | Bar | Radio | anything else
+      person TEXT NOT NULL,
+      hours TEXT NOT NULL DEFAULT '',     -- comma list of start hours, 7..25 (25 = 01:00)
+      note TEXT,
+      sort INTEGER NOT NULL DEFAULT 0
+    );
   `);
+
+  // Columns added after the first version (safe to run on every start)
+  addColumn(db, 'stock_items', 'volume_l', 'REAL');
+  addColumn(db, 'stock_items', 'unit_price_cents', 'INTEGER');
+  addColumn(db, 'stock_moves', 'unit_price_cents', 'INTEGER');
+  addColumn(db, 'stock_moves', 'source', 'TEXT');           // supplier / who brought it
+  addColumn(db, 'stock_moves', 'deal', "TEXT NOT NULL DEFAULT 'normal'"); // normal | komis | free
   return db;
+}
+
+function addColumn(db, table, column, type) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all().map((c) => c.name);
+  if (!cols.includes(column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
 }
 
 export const now = () => Date.now();

@@ -14,36 +14,44 @@
 <main class="wrap">
   <span class="label">Base sklad</span>
   <h1>Stock</h1>
-  <p class="muted" id="low" style="margin:-8px 0 24px"></p>
+  <div class="stats" id="totals" style="margin-top:0"></div>
+  <p class="muted" id="low" style="margin:-16px 0 24px"></p>
 
   <details class="box" open>
     <summary>Record a movement</summary>
     <form id="move" class="form-row">
-      <label><span class="label">Item</span><select name="item_id" id="move-item" required></select></label>
+      <label style="grid-column:span 2"><span class="label">Item</span><select name="item_id" id="move-item" required></select></label>
       <label><span class="label">What happened</span>
         <select name="reason" id="move-reason">
-          <option value="purchase">Purchase / delivery (+)</option>
+          <option value="purchase">Order / delivery (+)</option>
           <option value="event">Used at an event (−)</option>
-          <option value="loss">Loss / broken (−)</option>
-          <option value="correction">Stocktake: set counted amount (=)</option>
+          <option value="loss">Loss / broken / promo (−)</option>
+          <option value="correction">Stocktake: what is left (=)</option>
         </select></label>
-      <label><span class="label" id="amount-label">Amount</span><input name="amount" inputmode="decimal" required></label>
-      <label id="event-wrap"><span class="label">Event</span><select name="event_id" id="move-event"><option value="">—</option></select></label>
-      <label><span class="label">Note</span><input name="note" maxlength="300"></label>
+      <label><span class="label" id="amount-label">Amount</span><input name="amount" inputmode="decimal" required placeholder="e.g. 12 or 0,5"></label>
+      <label class="only-purchase"><span class="label">Unit price €</span><input name="unit_price" inputmode="decimal" placeholder="e.g. 12,90"></label>
+      <label class="only-purchase"><span class="label">From (supplier / who)</span><input name="source" maxlength="60" list="sources" placeholder="e.g. Metro, supplier"></label>
+      <label class="only-purchase"><span class="label">Deal</span>
+        <select name="deal"><option value="normal">Bought</option><option value="komis">Komis (return unsold)</option><option value="free">Free (partner)</option></select></label>
+      <label><span class="label">Event</span><select name="event_id" id="move-event"><option value="">—</option></select></label>
+      <label><span class="label">Date</span><input type="date" name="date" id="move-date"></label>
+      <label style="grid-column:span 2"><span class="label">Note</span><input name="note" maxlength="300" placeholder="e.g. 2 for promo, one bottle half full"></label>
       <button class="btn small" type="submit"><span>Save</span><span>→</span></button>
     </form>
+    <datalist id="sources"></datalist>
   </details>
 
   <div class="section-title">
     <h2>Items</h2>
-    <div style="display:flex;gap:6px" role="group" aria-label="Filter">
+    <div style="display:flex;gap:6px;flex-wrap:wrap" role="group" aria-label="Filter">
       <button class="icon-btn on" data-f="all" type="button" style="padding:0 12px">All</button>
       <button class="icon-btn" data-f="alko" type="button" style="padding:0 12px">Alko</button>
       <button class="icon-btn" data-f="nealko" type="button" style="padding:0 12px">Nealko</button>
+      <button class="icon-btn" data-f="material" type="button" style="padding:0 12px">Material</button>
     </div>
   </div>
   <div class="scroll"><table>
-    <thead><tr><th>Item</th><th>Type</th><th class="num">In stock</th><th class="num">Minimum</th><th>Note</th><th></th></tr></thead>
+    <thead><tr><th>Item</th><th>Type</th><th class="num">In stock</th><th class="num">Unit price</th><th class="num">Value</th><th class="num">Min</th><th>Note</th><th></th></tr></thead>
     <tbody id="items"></tbody>
   </table></div>
 
@@ -51,11 +59,13 @@
     <summary id="item-title">Add an item</summary>
     <form id="item" class="form-row">
       <input type="hidden" name="id">
-      <label><span class="label">Name</span><input name="name" required maxlength="80" placeholder="e.g. Pivo Šariš (sud 50 l)"></label>
-      <label><span class="label">Type</span><select name="category"><option value="alko">Alko</option><option value="nealko">Nealko</option></select></label>
+      <label style="grid-column:span 2"><span class="label">Name</span><input name="name" required maxlength="80" placeholder="e.g. Jägermeister"></label>
+      <label><span class="label">Type</span><select name="category"><option value="alko">Alko</option><option value="nealko">Nealko</option><option value="material">Material</option></select></label>
+      <label><span class="label">Size (litres)</span><input name="volume_l" inputmode="decimal" placeholder="e.g. 0,7"></label>
       <label><span class="label">Unit</span><select name="unit" id="units"></select></label>
+      <label><span class="label">Unit price €</span><input name="unit_price" inputmode="decimal"></label>
       <label><span class="label">Minimum (warn below)</span><input name="min_qty" inputmode="decimal" value="0"></label>
-      <label><span class="label">Note</span><input name="note" maxlength="300"></label>
+      <label style="grid-column:span 2"><span class="label">Note</span><input name="note" maxlength="300"></label>
       <div style="display:flex;gap:8px">
         <button class="btn small" type="submit"><span>Save item</span></button>
         <button class="btn ghost small" type="button" id="item-cancel"><span>Cancel</span></button>
@@ -63,74 +73,120 @@
     </form>
   </details>
 
-  <div class="section-title"><h2>Recent movements</h2></div>
+  <div class="section-title"><h2>History</h2>
+    <label style="flex-direction:row;align-items:center;gap:8px"><span class="label">Show</span>
+      <select id="hist-filter" style="width:auto;min-height:40px">
+        <option value="">Everything</option><option value="purchase">Orders</option><option value="event">Used at events</option>
+        <option value="loss">Losses</option><option value="correction">Stocktakes</option>
+      </select></label>
+  </div>
   <div class="scroll"><table>
-    <thead><tr><th>When</th><th>Item</th><th class="num">Change</th><th>Reason</th><th>Event</th><th>Who</th><th>Note</th></tr></thead>
+    <thead><tr><th>Date</th><th>Item</th><th class="num">Change</th><th>What</th><th class="num">Price</th><th class="num">Total</th><th>From / deal</th><th>Event</th><th>Who</th><th>Note</th><th></th></tr></thead>
     <tbody id="moves"></tbody>
+    <tfoot id="moves-sum"></tfoot>
   </table></div>
 </main>
 <script>
 (async () => {
-  const { h, api, n } = Hub;
+  const { h, api, n, eur } = Hub;
   await Hub.start('stock');
-  const REASON = { purchase: 'Purchase', event: 'Event', loss: 'Loss', correction: 'Stocktake' };
+  const REASON = { purchase: 'Order', event: 'Event', loss: 'Loss', correction: 'Stocktake' };
+  const DEAL = { normal: '', komis: 'komis', free: 'free' };
+  const TYPE = { alko: 'Alko', nealko: 'Nealko', material: 'Material' };
   let data, filter = 'all';
+
+  const size = (v) => (v ? String(v).replace('.', ',') + ' l' : '');
+  const label = (i) => [i.name, size(i.volume_l)].filter(Boolean).join(' ');
+  const value = (i) => (i.unit_price_cents ? Math.round(i.qty * i.unit_price_cents) : 0);
 
   const events = await api('/api/events');
   Hub.$('#move-event').append(...events.map((e) => h('option', { value: e.id }, e.name)));
+  Hub.$('#move-date').value = Hub.today();
 
-  function toggleEvent() {
+  function toggleFields() {
     const r = Hub.$('#move-reason').value;
-    Hub.$('#event-wrap').style.display = r === 'event' ? '' : 'none';
-    Hub.$('#amount-label').textContent = r === 'correction' ? 'Counted amount' : 'Amount';
+    document.querySelectorAll('.only-purchase').forEach((el) => { el.style.display = r === 'purchase' ? '' : 'none'; });
+    Hub.$('#amount-label').textContent = r === 'correction' ? 'Counted (what is left)' : 'Amount';
   }
-  Hub.$('#move-reason').onchange = toggleEvent; toggleEvent();
+  Hub.$('#move-reason').onchange = toggleFields; toggleFields();
 
   function render() {
     const items = data.items.filter((i) => filter === 'all' || i.category === filter);
     const low = data.items.filter((i) => i.qty < i.min_qty);
+    const sum = (cat) => data.items.filter((i) => !cat || i.category === cat).reduce((s, i) => s + value(i), 0);
+    Hub.$('#totals').replaceChildren(
+      h('div', {}, h('b', {}, eur(sum())), h('span', { class: 'label' }, 'Stock value')),
+      h('div', {}, h('b', {}, eur(sum('alko'))), h('span', { class: 'label' }, 'Alko')),
+      h('div', {}, h('b', {}, eur(sum('nealko'))), h('span', { class: 'label' }, 'Nealko')),
+      h('div', {}, h('b', {}, String(data.items.length)), h('span', { class: 'label' }, 'Items')));
     Hub.$('#low').textContent = low.length
-      ? `⚠ ${low.length} item${low.length > 1 ? 's are' : ' is'} below minimum: ${low.map((i) => i.name).join(', ')}`
-      : `${data.items.length} items · everything above minimum`;
+      ? `⚠ Below minimum: ${low.map(label).join(', ')}`
+      : 'Value = in stock × last unit price. Set a minimum on an item to get a warning when it runs low.';
     Hub.$('#items').replaceChildren(...(items.length ? items.map((i) => h('tr', { class: i.qty < i.min_qty ? 'warn-row' : null },
-      h('td', {}, i.name, i.demo ? h('span', { class: 'chip dashed', style: 'margin-left:8px' }, 'demo') : null),
-      h('td', {}, h('span', { class: 'chip' + (i.category === 'alko' ? ' solid' : '') }, i.category)),
+      h('td', {}, h('b', {}, i.name), i.volume_l ? h('span', { class: 'muted' }, ' ' + size(i.volume_l)) : null,
+        i.demo ? h('span', { class: 'chip dashed', style: 'margin-left:8px' }, 'demo') : null),
+      h('td', {}, h('span', { class: 'chip' + (i.category === 'alko' ? ' solid' : i.category === 'material' ? ' dashed' : '') }, TYPE[i.category] || i.category)),
       h('td', { class: 'num' }, h('b', {}, n(i.qty)), ' ' + i.unit, i.qty < i.min_qty ? ' ⚠' : ''),
-      h('td', { class: 'num' }, n(i.min_qty) + ' ' + i.unit),
-      h('td', { class: 'muted' }, i.note || ''),
-      h('td', { class: 'num' },
-        h('button', { class: 'icon-btn', type: 'button', title: 'Edit', 'aria-label': 'Edit ' + i.name, onclick: () => editItem(i) }, '✎'), ' ',
-        h('button', { class: 'icon-btn', type: 'button', title: 'Delete', 'aria-label': 'Delete ' + i.name, onclick: () => Hub.run(async () => {
-          if (!confirm(`Delete ${i.name} and its history?`)) return;
+      h('td', { class: 'num' }, i.unit_price_cents ? eur(i.unit_price_cents) : '—'),
+      h('td', { class: 'num' }, value(i) ? eur(value(i)) : '—'),
+      h('td', { class: 'num' }, i.min_qty ? n(i.min_qty) : '—'),
+      h('td', { class: 'muted', style: 'max-width:260px' }, i.note || ''),
+      h('td', { class: 'num', style: 'white-space:nowrap' },
+        h('button', { class: 'icon-btn', type: 'button', title: 'Edit', 'aria-label': 'Edit ' + label(i), onclick: () => editItem(i) }, '✎'), ' ',
+        h('button', { class: 'icon-btn', type: 'button', title: 'Delete', 'aria-label': 'Delete ' + label(i), onclick: () => Hub.run(async () => {
+          if (!confirm(`Delete ${label(i)} and its history?`)) return;
           await api('/api/stock/items/' + i.id, { method: 'DELETE' }); await load();
         }) }, '×'))))
-      : [h('tr', {}, h('td', { colspan: '6', class: 'muted' }, 'No items. Add one below.'))]));
+      : [h('tr', {}, h('td', { colspan: '8', class: 'muted' }, 'No items. Add one below.'))]));
+
     const sel = Hub.$('#move-item'); const keep = sel.value;
-    sel.replaceChildren(...data.items.map((i) => h('option', { value: i.id }, `${i.name} (${n(i.qty)} ${i.unit})`)));
+    const groups = ['alko', 'nealko', 'material'].map((c) => h('optgroup', { label: TYPE[c] },
+      data.items.filter((i) => i.category === c).map((i) => h('option', { value: i.id }, `${label(i)} (${n(i.qty)} ${i.unit})`))));
+    sel.replaceChildren(...groups);
     if (keep) sel.value = keep;
-    Hub.$('#moves').replaceChildren(...(data.moves.length ? data.moves.map((m) => h('tr', {},
-      h('td', {}, Hub.when(m.created_at)), h('td', {}, m.item),
-      h('td', { class: 'num' }, (m.delta > 0 ? '+' : '') + n(m.delta) + ' ' + m.unit),
-      h('td', {}, REASON[m.reason] || m.reason), h('td', {}, m.event || ''), h('td', {}, m.user || ''), h('td', { class: 'muted' }, m.note || '')))
-      : [h('tr', {}, h('td', { colspan: '7', class: 'muted' }, 'No movements yet.'))]));
+    Hub.$('#sources').replaceChildren(...[...new Set(data.moves.map((m) => m.source).filter(Boolean))].map((s) => h('option', { value: s })));
+
+    const hf = Hub.$('#hist-filter').value;
+    const moves = data.moves.filter((m) => !hf || m.reason === hf);
+    Hub.$('#moves').replaceChildren(...(moves.length ? moves.map((m) => {
+      const total = m.unit_price_cents && m.delta > 0 && m.deal !== 'free' ? Math.round(m.delta * m.unit_price_cents) : 0;
+      return h('tr', {},
+        h('td', {}, new Date(m.created_at).toLocaleDateString('sk-SK')),
+        h('td', {}, m.item + (m.volume_l ? ' ' + size(m.volume_l) : '')),
+        h('td', { class: 'num' }, (m.delta > 0 ? '+' : '') + n(m.delta) + ' ' + m.unit),
+        h('td', {}, REASON[m.reason] || m.reason),
+        h('td', { class: 'num' }, m.unit_price_cents ? eur(m.unit_price_cents) : ''),
+        h('td', { class: 'num' }, total ? eur(total) : ''),
+        h('td', {}, [m.source, DEAL[m.deal]].filter(Boolean).join(' · ')),
+        h('td', {}, m.event || ''), h('td', {}, m.user || ''),
+        h('td', { class: 'muted' }, m.note || ''),
+        h('td', { class: 'num' }, h('button', { class: 'icon-btn', type: 'button', title: 'Undo', 'aria-label': 'Undo this movement', onclick: () => Hub.run(async () => {
+          if (!confirm('Undo this movement? The stock goes back.')) return;
+          await api('/api/stock/moves/' + m.id, { method: 'DELETE' }); await load();
+        }) }, '↺')));
+    }) : [h('tr', {}, h('td', { colspan: '11', class: 'muted' }, 'Nothing yet.'))]));
+    const spent = moves.reduce((s, m) => s + (m.unit_price_cents && m.delta > 0 && m.deal !== 'free' ? Math.round(m.delta * m.unit_price_cents) : 0), 0);
+    Hub.$('#moves-sum').replaceChildren(spent ? h('tr', {}, h('td', { colspan: '5', class: 'label' }, 'Orders total (shown rows, without free)'), h('td', { class: 'num' }, h('b', {}, eur(spent))), h('td', { colspan: '5' })) : '');
   }
 
   async function load() { data = await api('/api/stock'); render(); }
-  Hub.$('#units').append(...(await api('/api/stock')).units.map((u) => h('option', { value: u }, u)));
-  await load();
+  data = await api('/api/stock');
+  Hub.$('#units').append(...data.units.map((u) => h('option', { value: u }, u)));
+  render();
 
   document.querySelectorAll('[data-f]').forEach((b) => b.onclick = () => {
     filter = b.dataset.f;
     document.querySelectorAll('[data-f]').forEach((x) => x.classList.toggle('on', x === b));
     render();
   });
+  Hub.$('#hist-filter').onchange = render;
 
   Hub.$('#move').onsubmit = (e) => Hub.run(async () => {
     e.preventDefault();
     const body = Hub.formData(e.target);
-    if (body.reason !== 'event') delete body.event_id;
+    if (body.reason !== 'purchase') { delete body.unit_price; delete body.source; delete body.deal; }
     const r = await api('/api/stock/moves', { body });
-    e.target.amount.value = ''; e.target.note.value = '';
+    e.target.amount.value = ''; e.target.note.value = ''; e.target.unit_price.value = '';
     Hub.toast('Saved · now ' + n(r.qty) + ' in stock');
     await load();
   });
@@ -138,8 +194,9 @@
   function editItem(i) {
     const f = Hub.$('#item');
     f.id.value = i.id; f.name.value = i.name; f.category.value = i.category; f.unit.value = i.unit;
+    f.volume_l.value = i.volume_l ?? ''; f.unit_price.value = i.unit_price_cents ? (i.unit_price_cents / 100).toFixed(2) : '';
     f.min_qty.value = i.min_qty; f.note.value = i.note || '';
-    Hub.$('#item-title').textContent = 'Edit: ' + i.name;
+    Hub.$('#item-title').textContent = 'Edit: ' + label(i);
     Hub.$('#item-box').open = true; Hub.$('#item-box').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
   function resetItem() { Hub.$('#item').reset(); Hub.$('#item').id.value = ''; Hub.$('#item-title').textContent = 'Add an item'; }

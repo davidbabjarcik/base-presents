@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staff · BASE Hub</title>
+<link rel="icon" href="/assets/favicon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/hub.css">
+<script src="/hub.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <div id="list-view">
+    <span class="label">Who is there and when</span>
+    <h1>Staff</h1>
+    <details class="box" id="new-box">
+      <summary>New day</summary>
+      <form id="new-day" class="form-row">
+        <label><span class="label">Date</span><input type="date" name="date" required></label>
+        <label style="grid-column:span 2"><span class="label">Title</span><input name="title" required maxlength="100" placeholder="e.g. Chodbovica 5 · event day"></label>
+        <label><span class="label">Event</span><select name="event_id" class="events"><option value="">—</option></select></label>
+        <label style="grid-column:span 2"><span class="label">Copy people from</span><select name="copy_from" id="copy-from"><option value="">— empty day —</option></select></label>
+        <button class="btn small" type="submit"><span>Create</span><span>→</span></button>
+      </form>
+    </details>
+    <div class="grid" id="days"></div>
+  </div>
+
+  <div id="day-view" hidden>
+    <a class="link" href="/staff">← All days</a>
+    <span class="label" id="day-sub" style="display:block;margin-top:12px"></span>
+    <h1 id="day-title">Day</h1>
+
+    <details class="box">
+      <summary>Day details</summary>
+      <form id="day-form" class="form-row">
+        <label><span class="label">Date</span><input type="date" name="date" required></label>
+        <label style="grid-column:span 2"><span class="label">Title</span><input name="title" required maxlength="100"></label>
+        <label><span class="label">Event</span><select name="event_id" class="events"><option value="">—</option></select></label>
+        <label style="grid-column:1/-1"><span class="label">Notes (meetings, start time…)</span><textarea name="notes" maxlength="1000"></textarea></label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn small" type="submit"><span>Save</span></button>
+          <button class="btn ghost small" type="button" id="dup"><span>Duplicate day</span></button>
+          <button class="btn ghost small" type="button" id="del-day"><span>Delete day</span></button>
+        </div>
+      </form>
+    </details>
+    <p class="muted" id="day-notes" style="white-space:pre-line;margin:0 0 16px"></p>
+    <p class="muted" style="font-size:13px;margin:0 0 16px">Click an hour to switch it on or off. Drag across hours to fill several. The last row of each group shows how many people are there each hour.</p>
+
+    <div id="groups"></div>
+
+    <form id="add-row" class="form-row" style="margin-top:24px;border:1px solid #333;padding:16px">
+      <label><span class="label">Group</span><input name="grp" list="group-list" value="Prep" required maxlength="30"></label>
+      <label><span class="label">Name</span><input name="person" list="people" required maxlength="60"></label>
+      <label><span class="label">From</span><select name="from" class="hour-sel"></select></label>
+      <label><span class="label">To</span><select name="to" class="hour-sel"></select></label>
+      <label><span class="label">Note</span><input name="note" maxlength="200" placeholder="e.g. only in the afternoon"></label>
+      <button class="btn small" type="submit"><span>+ Add person</span></button>
+    </form>
+    <datalist id="people"></datalist>
+    <datalist id="group-list"></datalist>
+  </div>
+</main>
+<script>
+(async () => {
+  const { h, api, date } = Hub;
+  await Hub.start('staff');
+  const hh = (x) => String(x % 24).padStart(2, '0') + ':00';
+  const dayName = (d) => new Date(d + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' });
+  const events = await api('/api/events');
+  document.querySelectorAll('select.events').forEach((s) => s.append(...events.map((e) => h('option', { value: e.id }, e.name))));
+  const params = new URLSearchParams(location.search);
+  const dayId = Number(params.get('day')) || null;
+  let list = await api('/api/staff');
+  Hub.$('#people').append(...list.people.map((p) => h('option', { value: p })));
+
+  // ---------- List of days ----------
+  if (!dayId) {
+    Hub.$('#copy-from').append(...list.days.map((d) => h('option', { value: d.id }, `${date(d.date)} · ${d.title}`)));
+    Hub.$('#new-day').date.value = Hub.today();
+    const today = Hub.today();
+    Hub.$('#days').replaceChildren(...(list.days.length ? list.days.map((d) => h('a', {
+      class: 'panel', href: '/staff?day=' + d.id, style: 'text-decoration:none' + (d.date < today ? ';opacity:.6' : '')
+    },
+      h('span', { class: 'label' }, `${date(d.date)} · ${dayName(d.date)}`),
+      h('h2', {}, d.title),
+      h('span', { class: 'muted' }, `${d.people} people` + (d.event ? ' · ' + d.event : ''))))
+      : [h('p', { class: 'muted' }, 'No days yet. Create the first one above.')]));
+    Hub.$('#new-day').onsubmit = (e) => Hub.run(async () => {
+      e.preventDefault();
+      const r = await api('/api/staff/days', { body: Hub.formData(e.target) });
+      location.href = '/staff?day=' + r.id;
+    });
+    return;
+  }
+
+  // ---------- One day ----------
+  Hub.$('#list-view').hidden = true;
+  Hub.$('#day-view').hidden = false;
+  let data;
+  const hours = list.hours;
+  document.querySelectorAll('.hour-sel').forEach((s, i) => s.append(...hours.map((x) => h('option', { value: x, selected: i === 0 ? x === 16 : x === 25 }, hh(x)))));
+
+  async function load() {
+    data = await api('/api/staff/days/' + dayId);
+    const d = data.day;
+    document.title = d.title + ' · BASE Hub';
+    Hub.$('#day-title').textContent = d.title;
+    Hub.$('#day-sub').textContent = `${date(d.date)} · ${dayName(d.date)}` + (d.event ? ' · ' + d.event : '');
+    Hub.$('#day-notes').textContent = d.notes || '';
+    const f = Hub.$('#day-form');
+    f.date.value = d.date; f.title.value = d.title; f.event_id.value = d.event_id || ''; f.notes.value = d.notes || '';
+    const groups = [...new Set([...data.groups, ...data.rows.map((r) => r.grp)])];
+    Hub.$('#group-list').replaceChildren(...groups.map((g) => h('option', { value: g })));
+    Hub.$('#groups').replaceChildren(...groups.filter((g) => data.groups.includes(g) || data.rows.some((r) => r.grp === g)).map((g) => groupTable(g, data.rows.filter((r) => r.grp === g))));
+  }
+
+  // Drag-to-paint hours
+  let paint = null; // { row, on, set:Set, tr, last }
+  function fill(p, h) {
+    const lo = Math.min(p.last, h), hi = Math.max(p.last, h);
+    p.tr.querySelectorAll('td.cell').forEach((td) => {
+      const x = Number(td.dataset.h);
+      if (x < lo || x > hi) return;
+      p.on ? p.set.add(x) : p.set.delete(x);
+      td.classList.toggle('on', p.on);
+    });
+    p.last = h;
+  }
+  // Follow the pointer (mouse or finger) and fill every hour between the last cell and this one
+  window.addEventListener('pointermove', (e) => {
+    if (!paint) return;
+    const td = document.elementFromPoint(e.clientX, e.clientY)?.closest('td.cell');
+    if (td && td.parentElement === paint.tr) fill(paint, Number(td.dataset.h));
+  });
+  function saveRow(row, set) {
+    return Hub.run(async () => {
+      await api('/api/staff/rows/' + row.id, { method: 'PUT', body: { hours: [...set] } });
+      await load();
+    });
+  }
+  window.addEventListener('pointerup', () => {
+    if (!paint) return;
+    const p = paint; paint = null;
+    saveRow(p.row, p.set);
+  });
+
+  function groupTable(g, rows) {
+    const count = hours.map((x) => rows.filter((r) => r.hours.includes(x)).length);
+    return h('section', { style: 'margin-bottom:28px' },
+      h('div', { class: 'row', style: 'margin-bottom:8px' }, h('h2', { style: 'font-size:20px' }, g + ` (${rows.length})`)),
+      h('div', { class: 'scroll' }, h('table', { class: 'shift' },
+        h('thead', {}, h('tr', {}, h('th', { class: 'who' }, 'Name'), hours.map((x) => h('th', { class: 'hr' }, hh(x).slice(0, 2))), h('th', {}, 'Note'), h('th', {}))),
+        h('tbody', {}, rows.map((r) => {
+          const set = new Set(r.hours);
+          return h('tr', {},
+            h('td', { class: 'who' }, h('input', { value: r.person, 'aria-label': 'Name', onchange: (e) => Hub.run(async () => { await api('/api/staff/rows/' + r.id, { method: 'PUT', body: { person: e.target.value } }); await load(); }) })),
+            hours.map((x) => h('td', {
+              class: 'cell' + (set.has(x) ? ' on' : ''), 'data-h': x, role: 'checkbox', tabindex: '0', 'aria-checked': String(set.has(x)), 'aria-label': `${r.person} ${hh(x)}`,
+              onpointerdown: (e) => {
+                e.preventDefault();
+                e.currentTarget.releasePointerCapture?.(e.pointerId); // let a finger move across cells
+                paint = { row: r, on: !set.has(x), set, tr: e.currentTarget.parentElement, last: x };
+                fill(paint, x);
+              },
+              onkeydown: (e) => {
+                if (e.key !== ' ' && e.key !== 'Enter') return;
+                e.preventDefault();
+                set.has(x) ? set.delete(x) : set.add(x);
+                saveRow(r, set);
+              }
+            })),
+            h('td', {}, h('input', { value: r.note || '', 'aria-label': 'Note', class: 'note', onchange: (e) => Hub.run(async () => { await api('/api/staff/rows/' + r.id, { method: 'PUT', body: { note: e.target.value } }); await load(); }) })),
+            h('td', {}, h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Remove ' + r.person, style: 'min-width:32px;min-height:32px', onclick: () => Hub.run(async () => {
+              if (!confirm(`Remove ${r.person} from this day?`)) return;
+              await api('/api/staff/rows/' + r.id, { method: 'DELETE' }); await load();
+            }) }, '×')));
+        })),
+        h('tfoot', {}, h('tr', {}, h('td', { class: 'who label' }, 'People'), count.map((c) => h('td', { class: 'cnt' + (c ? '' : ' zero') }, c || '')), h('td', { colspan: '2' }))))));
+  }
+
+  Hub.$('#add-row').onsubmit = (e) => Hub.run(async () => {
+    e.preventDefault();
+    const b = Hub.formData(e.target);
+    const from = Number(b.from), to = Number(b.to);
+    const hrs = hours.filter((x) => x >= Math.min(from, to) && x <= Math.max(from, to));
+    await api(`/api/staff/days/${dayId}/rows`, { body: { grp: b.grp, person: b.person, note: b.note, hours: hrs } });
+    e.target.person.value = ''; e.target.note.value = '';
+    await load();
+  });
+  Hub.$('#day-form').onsubmit = (e) => Hub.run(async () => {
+    e.preventDefault();
+    await api('/api/staff/days/' + dayId, { method: 'PUT', body: Hub.formData(e.target) });
+    Hub.toast('Saved'); await load();
+  });
+  Hub.$('#dup').onclick = () => Hub.run(async () => {
+    const d = data.day;
+    const r = await api('/api/staff/days', { body: { date: d.date, title: d.title + ' (copy)', event_id: d.event_id, notes: d.notes, copy_from: d.id } });
+    location.href = '/staff?day=' + r.id;
+  });
+  Hub.$('#del-day').onclick = () => Hub.run(async () => {
+    if (!confirm('Delete this whole day?')) return;
+    await api('/api/staff/days/' + dayId, { method: 'DELETE' });
+    location.href = '/staff';
+  });
+  await load();
+})();
+</script>
+</body>
+</html>

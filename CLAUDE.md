@@ -14,8 +14,9 @@ Open `index.html` directly in a browser — no build step.
 
 `backoffice/` — **BASE Hub**, internal team app (prototype, runs locally). Node 22 + Express + SQLite (`node:sqlite`).
 `cd backoffice && npm install && npm start` → http://localhost:4242/login. Sections: ticket sales (Stripe Checkout TEST mode
-or demo payment, QR tickets, `/scan` door scanner), stock alko/nealko, promo calendar, event & bar stats, event ideas
-(pros/cons, votes), users. Roles admin / tickets / team (`ACCESS` in `backoffice/auth.js`).
+or demo payment, QR tickets, `/scan` door scanner), stock alko/nealko/material (volume, unit price, stock value,
+orders incl. komis/free, stocktakes), staff planning (`/staff`: per-day hour grid 07–01 by group Prep/Bar/Radio),
+promo calendar, event & bar stats, event ideas (pros/cons, votes), users. Roles admin / tickets / team (`ACCESS` in `backoffice/auth.js`).
 Accounts are seeded from `backoffice/.env` on first start (not committed); logins are listed in `README.md` and
 `backoffice/README.md`. Data lives in `backoffice/data/base.db` (not committed). Demo rows have `demo = 1`.
 Internal UI copy is English. Full docs (Slovak): `backoffice/README.md`. The public site sells tickets through it and links to its login.
