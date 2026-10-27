@@ -90,7 +90,9 @@ Všetko je v jednom súbore **`backoffice/data/base.db`** (SQLite). Tiež nejde 
 
 Kamera v skeneri funguje len na `localhost` alebo cez `https://`. Inak treba kód z lístka zadať ručne.
 
-Stripe test kľúč: na stripe.com si vytvor účet, zapni **Test mode** → Developers → API keys → skopíruj **Secret key** do `STRIPE_SECRET_KEY` a reštartuj server.
+Podrobný návod (test mód, testovacie karty, webhook, vzhľad, ako ísť naostro): **[../STRIPE.md](../STRIPE.md)**.
+
+Stručne: na stripe.com si vytvor účet, zapni **Test mode** → Developers → API keys → skopíruj **Secret key** do `STRIPE_SECRET_KEY` a reštartuj server.
 
 ### Ticket design (PDF lístok)
 - Nastavuje sa v **Ticket design** (`/ticket-design`), vidí ho admin a účet Lístky.

@@ -36,7 +36,9 @@ Aby fungoval nákup lístkov na webe, **musí bežať aj BASE Hub**. Inak formul
 
 ⚠️ Heslá sú len na skúšanie lokálne. Pred spustením na internete ich zmeň.
 
-Všetko ostatné (sekcie, nastavenia, Stripe, zálohy, čo chýba do ostrej prevádzky) je v **[backoffice/README.md](backoffice/README.md)**.
+Všetko ostatné (sekcie, nastavenia, zálohy, čo chýba do ostrej prevádzky) je v **[backoffice/README.md](backoffice/README.md)**.
+
+**Platby kartou (Stripe):** krok za krokom v **[STRIPE.md](STRIPE.md)**.
 
 ## Fotoreporty (galérie z eventov)
 

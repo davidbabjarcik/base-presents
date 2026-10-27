@@ -24,7 +24,7 @@ design settings in `/ticket-design` (stored in `settings` table, artwork in `bac
 Public staff sign-up: `signup.js`, link `/join/<token>` per staff day with chosen sections; rows get `self = 1`. Roles admin / tickets / team (`ACCESS` in `backoffice/auth.js`).
 Accounts are seeded from `backoffice/.env` on first start (not committed); logins are listed in `README.md` and
 `backoffice/README.md`. Data lives in `backoffice/data/base.db` (not committed). Demo rows have `demo = 1`.
-Internal UI copy is English. Full docs (Slovak): `backoffice/README.md`. The public site sells tickets through it and links to its login.
+Internal UI copy is English. Full docs (Slovak): `backoffice/README.md`. Stripe setup guide (Slovak): `STRIPE.md`. The public site sells tickets through it and links to its login.
 
 ## Design rules
 - Strictly black and white: `#000000`, `#FFFFFF`
