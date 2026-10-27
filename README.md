@@ -54,7 +54,8 @@ node add-album.mjs "C:\Fotky\Chodbovica 5" --title "Chodbovica 5" --date 2026-11
 
 Potom commit + push a o minútu je album online.
 
-- Skript zoberie všetky JPG/PNG z priečinka (zoradené podľa názvu súboru), otočí ich správne, zmenší na max. **2000 px** + náhľad 640 px a **zmaže z nich všetky metadáta** (GPS, fotoaparát). Z 8 MB fotky je cca 300–400 kB.
+- Zdroj môže byť **priečinok** (aj s podpriečinkami) alebo **ZIP** (napr. od fotografa cez WeTransfer); ZIP sa nerozbaľuje na disk.
+- Skript zoberie všetky JPG/PNG (zoradené podľa názvu súboru), otočí ich správne, zmenší na max. **2000 px** + náhľad 640 px a **zmaže z nich všetky metadáta** (GPS, fotoaparát). Z 8 MB fotky je cca 300–400 kB.
 - Voliteľné: `--cover 12` (titulná fotka = 12. v poradí), `--originals "https://…"` (odkaz na plné rozlíšenie, napr. Google Drive), `--slug …` (názov priečinka), `--replace` (prepísať existujúci album).
 - Výsledok: `photos/<album>/` (fotky, `thumbs/`, `album.json`) a zoznam `photos/albums.json`.
 - **Zmazať album**: zmaž jeho priečinok v `photos/` a jeho záznam v `photos/albums.json`.
