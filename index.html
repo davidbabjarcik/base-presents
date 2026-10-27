@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Base Presents</title>
+<meta name="description" content="Base Presents from Košice: home of Chodbovica and Chillout, student parties since 2021. Tickets via Tootoot.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" href="assets/favicon-32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="assets/favicon-512.png" sizes="512x512">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<!-- Social share preview. Facebook/Instagram need absolute URLs: change the domain if the site lives elsewhere. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Base Presents">
+<meta property="og:title" content="Base Presents">
+<meta property="og:description" content="Home of Chodbovica and Chillout. Student parties in Košice since 2021. Tickets via Tootoot.">
+<meta property="og:url" content="https://basepresents.sk/">
+<meta property="og:image" content="https://basepresents.sk/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="BASE Presents logo, white on black">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+html{scroll-behavior:smooth}
+body{margin:0;background:#000}
+a{color:inherit;text-decoration:none}
+a:hover{opacity:.72}
+@keyframes bp-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.bp-track{animation:bp-marquee 40s linear infinite}
+/* ---- Animations ---- */
+:root{--ease:cubic-bezier(.2,.7,.2,1);--ease-io:cubic-bezier(.77,0,.18,1)}
+/* Scroll reveal (JS adds the classes; without JS everything stays visible) */
+html.js .bp-reveal{opacity:0;transform:translateY(32px);transition:opacity .9s var(--ease) var(--d,0s),transform .9s var(--ease) var(--d,0s)}
+html.js .bp-reveal.is-in{opacity:1;transform:none}
+/* Headings rise out of an invisible mask */
+html.js .bp-rise{transform:translateY(100%);clip-path:inset(-10% -10% 100% -10%);transition:transform 1s var(--ease) var(--d,0s),clip-path 1s var(--ease) var(--d,0s)}
+html.js .bp-rise.is-in{transform:none;clip-path:inset(-10% -10% -10% -10%)}
+/* Logo wipe left → right */
+html.js .bp-wipe{clip-path:inset(0 100% 0 0);transition:clip-path 1.4s var(--ease-io) var(--d,0s)}
+html.js .bp-wipe.is-in{clip-path:inset(0 0 0 0)}
+/* Sticky header that hides on scroll down */
+.bp-header{position:sticky;top:0;z-index:50;background:#000;transition:transform .4s var(--ease)}
+.bp-header.is-hidden{transform:translateY(-100%)}
+/* Scroll progress line (inverts over white sections) */
+.bp-progress{position:fixed;top:0;left:0;right:0;height:3px;background:#fff;mix-blend-mode:difference;transform-origin:0 50%;transform:scaleX(0);z-index:60;pointer-events:none}
+/* Blinking "live" dot */
+@keyframes bp-blink{0%,100%{opacity:1}50%{opacity:.15}}
+.bp-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:8px;vertical-align:1px;animation:bp-blink 1.4s ease-in-out infinite}
+/* Countdown digit flip */
+@keyframes bp-flip{from{opacity:0;transform:translateY(-40%)}to{opacity:1;transform:none}}
+.bp-flip{animation:bp-flip .45s var(--ease)}
+/* Hovers */
+a[style*="space-between"] > span:last-child{transition:transform .3s var(--ease)}
+a[style*="space-between"]:hover > span:last-child{transform:translateX(6px)}
+#events a[aria-label$="photos"]{transition:background .25s,color .25s}
+#events a[aria-label$="photos"]:hover{background:#000;color:#fff;opacity:1}
+article[aria-label^="Chillout 10"] [aria-hidden="true"]{transition:color .5s var(--ease)}
+article[aria-label^="Chillout 10"]:hover [aria-hidden="true"]{color:#000 !important}
+.bp-archive{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:720px){.bp-archive{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
+.bp-archive figure{margin:0;position:relative;overflow:hidden;aspect-ratio:4/5;background:#141414}
+.bp-archive img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(1) contrast(1.1);transition:filter .6s,transform .9s var(--ease)}
+.bp-archive figure:hover img{filter:none;transform:scale(1.04)}
+.bp-archive figcaption{position:absolute;left:0;right:0;bottom:0;padding:48px 16px 14px;background:linear-gradient(transparent,rgba(0,0,0,.75));font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#fff}
+@media (max-width:720px){.bp-archive figcaption{font-size:10px;padding:32px 10px 10px;letter-spacing:.1em}}
+.bp-track:hover{animation-play-state:paused}
+@media (prefers-reduced-motion: reduce){
+  .bp-track,.bp-dot,.bp-flip{animation:none}
+  html{scroll-behavior:auto}
+  html.js .bp-reveal,html.js .bp-rise,html.js .bp-wipe{opacity:1;transform:none;clip-path:none;transition:none}
+  .bp-header{transition:none}
+}
+</style>
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body>
+<div style="width: 100%; min-height: 100vh; background: #000000; color: #FFFFFF; font-family: Inter, system-ui, sans-serif">
+
+<div class="bp-progress" aria-hidden="true"></div>
+<header class="bp-header" style="border-bottom: 1px solid #262626">
+<nav aria-label="Main" style="max-width: 1280px; margin: 0 auto; padding: 20px clamp(20px, 4vw, 32px); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<a href="#top" aria-label="Base Presents, home" style="display: flex; align-items: center; gap: 12px; min-height: 44px">
+<img src="assets/base-logo-white.png" alt="" style="height: 24px; width: auto; display: block">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.28em; color: #A3A3A3">PRESENTS</span>
+</a>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 28px; font-size: 15px; font-weight: 500">
+<a href="#events" style="padding: 12px 0">Events</a>
+<a href="#about" style="padding: 12px 0">About</a>
+<a href="#archive" style="padding: 12px 0">Archive</a>
+<a href="#contact" style="padding: 12px 0">Contact</a>
+<a href="#tickets" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; background: #FFFFFF; color: #000000; font-weight: 600">Tickets</a>
+</div>
+</nav>
+</header>
+
+<section id="top" style="max-width: 1280px; margin: 0 auto; padding: clamp(40px, 6vw, 72px) clamp(20px, 4vw, 32px) clamp(56px, 8vw, 96px); display: flex; flex-direction: column; gap: clamp(32px, 5vw, 56px)">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #A3A3A3">
+<span>Košice, Slovakia</span>
+<span>Chodbovica · Chillout</span>
+<span>Since 2021</span>
+</div>
+<h1 style="margin: 0; display: flex; flex-direction: column; gap: clamp(12px, 2vw, 24px)">
+<img src="assets/base-logo-white.png" alt="Base" style="width: 100%; height: auto; aspect-ratio: 1955 / 622; display: block">
+<span style="align-self: flex-end; margin-right: -0.42em; font-family: Montserrat, Inter, sans-serif; font-weight: 500; font-size: clamp(18px, 3.6vw, 48px); line-height: 1; letter-spacing: 0.42em; text-transform: uppercase">Presents</span>
+</h1>
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 40px">
+<div style="flex: 1 1 420px; max-width: 560px; display: flex; flex-direction: column; gap: 28px">
+<p style="margin: 0; font-size: clamp(20px, 2.2vw, 26px); line-height: 1.4; font-weight: 500">Home of Chodbovica and Chillout.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+<a href="#tickets" style="display: inline-flex; align-items: center; justify-content: center; min-height: 56px; padding: 0 28px; background: #FFFFFF; color: #000000; font-weight: 600; font-size: 16px">Buy tickets →</a>
+<a href="#events" style="display: inline-flex; align-items: center; justify-content: center; min-height: 56px; padding: 0 28px; border: 1px solid #FFFFFF; font-weight: 600; font-size: 16px">Our events</a>
+</div>
+</div>
+<article aria-label="Next event" style="flex: 1 1 340px; max-width: 440px; border: 1px solid #FFFFFF; padding: 28px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #A3A3A3">
+<span>Next event</span>
+<span><span class="bp-dot"></span>On sale now</span>
+</div>
+<div style="font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 56px; line-height: 1; letter-spacing: -0.01em">16.11.</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 24px; font-weight: 600; line-height: 1.2">Chodbovica 5</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #A3A3A3">Jedlíkova 7 · Košice · 21:07</div>
+</div>
+<div role="timer" aria-label="Countdown to the event" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid #333333; border-bottom: 1px solid #333333">
+<div style="padding: 16px 0; display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 36px; line-height: 1" data-cd="days">--</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #A3A3A3">DAYS</span>
+</div>
+<div style="padding: 16px 0 16px 16px; border-left: 1px solid #333333; display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 36px; line-height: 1" data-cd="hours">--</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #A3A3A3">HRS</span>
+</div>
+<div style="padding: 16px 0 16px 16px; border-left: 1px solid #333333; display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 36px; line-height: 1" data-cd="mins">--</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #A3A3A3">MIN</span>
+</div>
+<div style="padding: 16px 0 16px 16px; border-left: 1px solid #333333; display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 36px; line-height: 1" data-cd="secs">--</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #A3A3A3">SEC</span>
+</div>
+</div>
+<a href="#tickets" style="display: flex; align-items: center; justify-content: space-between; min-height: 56px; padding: 0 20px; background: #FFFFFF; color: #000000; font-weight: 600; font-size: 16px"><span>Tickets</span><span>→</span></a>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A3A3A3">Sold via Tootoot</div>
+</article>
+</div>
+</section>
+
+<div aria-hidden="true" style="background: #FFFFFF; color: #000000; overflow: hidden; padding: 18px 0; border-top: 1px solid #FFFFFF">
+<div class="bp-track" style="display: flex; width: max-content; font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: 32px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap">
+<span style="padding-right: 48px">Chodbovica 5  /  Tickets on sale now  /  Chillout 10  /  Coming soon  /  Base Presents  /  Chodbovica 5  /  Tickets on sale now  /  Chillout 10  /  Coming soon  /  Base Presents  /</span>
+<span style="padding-right: 48px">Chodbovica 5  /  Tickets on sale now  /  Chillout 10  /  Coming soon  /  Base Presents  /  Chodbovica 5  /  Tickets on sale now  /  Chillout 10  /  Coming soon  /  Base Presents  /</span>
+</div>
+</div>
+
+<section id="events" style="background: #FFFFFF; color: #000000">
+<div style="max-width: 1280px; margin: 0 auto; padding: clamp(64px, 9vw, 120px) clamp(20px, 4vw, 32px); display: flex; flex-direction: column; gap: clamp(48px, 6vw, 72px)">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px">
+<h2 style="margin: 0; font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: clamp(44px, 6.5vw, 92px); line-height: 0.95; letter-spacing: -0.02em; text-transform: uppercase">Our events</h2>
+<p style="flex: 0 1 420px; margin: 0; font-size: 18px; line-height: 1.55; color: #5C5C5C">Two series. 13 editions so far.</p>
+</div>
+
+<div style="border-top: 2px solid #000000; padding-top: 32px; display: flex; flex-wrap: wrap; gap: 40px 56px">
+<div style="flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; justify-content: space-between; gap: 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #5C5C5C">
+<span>Series 01</span>
+<span>Editions 1–5</span>
+</div>
+<h3 style="margin: 0; font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: clamp(44px, 6vw, 80px); line-height: 0.95; letter-spacing: -0.02em; text-transform: uppercase">Chodbovica</h3>
+<p style="margin: 0; font-size: 18px; line-height: 1.55; color: #5C5C5C; max-width: 460px">The legendary indoor student night at the Jedlíkova 7 dorm. Several stages, several genres in one place: EDM, Latino &amp; Oldies, folk and an International Stage.</p>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #5C5C5C">Past editions</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="#archive" aria-label="Chodbovica 1, photos" style="width: 64px; height: 64px; box-sizing: border-box; border: 2px solid #000000; display: flex; align-items: center; justify-content: center; font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 22px">01</a>
+<a href="#archive" aria-label="Chodbovica 2, photos" style="width: 64px; height: 64px; box-sizing: border-box; border: 2px solid #000000; display: flex; align-items: center; justify-content: center; font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 22px">02</a>
+<a href="#archive" aria-label="Chodbovica 3, photos" style="width: 64px; height: 64px; box-sizing: border-box; border: 2px solid #000000; display: flex; align-items: center; justify-content: center; font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 22px">03</a>
+<a href="#archive" aria-label="Chodbovica 4, photos" style="width: 64px; height: 64px; box-sizing: border-box; border: 2px solid #000000; display: flex; align-items: center; justify-content: center; font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 22px">04</a>
+</div>
+</div>
+</div>
+<article aria-label="Chodbovica 5, tickets on sale" style="flex: 1 1 400px; min-width: 0; min-height: 440px; box-sizing: border-box; background: #000000; color: #FFFFFF; padding: 28px; display: flex; flex-direction: column; justify-content: space-between; gap: 28px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase">Chodbovica · Edition 5</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; background: #FFFFFF; color: #000000; padding: 6px 10px; white-space: nowrap"><span class="bp-dot"></span>On sale now</span>
+</div>
+<div aria-hidden="true" style="font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: 150px; line-height: 0.8; letter-spacing: -0.03em">05</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 34px; line-height: 1">16.11.2026</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #A3A3A3">Jedlíkova 7, Košice · Start 21:07</span>
+<span style="font-size: 15px; color: #D4D4D4">Line-up announced soon</span>
+</div>
+<a href="#tickets" style="display: flex; align-items: center; justify-content: space-between; min-height: 56px; padding: 0 20px; background: #FFFFFF; color: #000000; font-weight: 600; font-size: 16px"><span>Buy tickets</span><span>→</span></a>
+</article>
+</div>
+
+<div style="border-top: 2px solid #000000; padding-top: 32px; display: flex; flex-wrap: wrap; gap: 40px 56px">
+<div style="flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; justify-content: space-between; gap: 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #5C5C5C">
+<span>Series 02</span>
+<span>Editions 1–10</span>
+</div>
+<h3 style="margin: 0; font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: clamp(44px, 6vw, 80px); line-height: 0.95; letter-spacing: -0.02em; text-transform: uppercase">Chillout</h3>
+<p style="margin: 0; font-size: 18px; line-height: 1.55; color: #5C5C5C; max-width: 460px">A free open-air daytime party in front of Jedlíkova 9, the biggest student dorm in Košice. House music at sunset, chill zones on the grass, and a full-on party when night falls.</p>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #5C5C5C">Past editions</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="#archive" aria-label="Chillout 1, photos" style="width: 64px; height: 64px; box-sizing: border-box; border: 2px solid #000000; display: flex; align-items: center; justify-content: center; font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 22px">01</a>
+<a href="#archive" aria-label="Chillout 2, photos" style="width: 64px; height: 64px; box-sizing: border-box; border: 2px solid #000000; display: flex; align-items: center; justify-content: center; font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 22px">02</a>
+<a href="#archive" aria-label="Chillout 3, photos" style="width: 64px; height: 64px; box-sizing: border-box; border: 2px solid #000000; display: flex; align-items: center; justify-content: center; font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 22px">03</a>
+<a href="#archive" aria-label="Chillout 4, photos" style="width: 64px; height: 64px; box-sizing: border-box; border: 2px solid #000000; display: flex; align-items: center; justify-content: center; font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 22px">04</a>
+<a href="#archive" aria-label="Chillout 5, photos" style="width: 64px; height: 64px; box-sizing: border-box; border: 2px solid #000000; display: flex; align-items: center; justify-content: center; font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 22px">05</a>
+<a href="#archive" aria-label="Chillout 6, photos" style="width: 64px; height: 64px; box-sizing: border-box; border: 2px solid #000000; display: flex; align-items: center; justify-content: center; font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 22px">06</a>
+<a href="#archive" aria-label="Chillout 7, photos" style="width: 64px; height: 64px; box-sizing: border-box; border: 2px solid #000000; display: flex; align-items: center; justify-content: center; font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 22px">07</a>
+<a href="#archive" aria-label="Chillout 8, photos" style="width: 64px; height: 64px; box-sizing: border-box; border: 2px solid #000000; display: flex; align-items: center; justify-content: center; font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 22px">08</a>
+<a href="#archive" aria-label="Chillout 9, photos" style="width: 64px; height: 64px; box-sizing: border-box; border: 2px solid #000000; display: flex; align-items: center; justify-content: center; font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 22px">09</a>
+</div>
+</div>
+</div>
+<article aria-label="Chillout 10, coming soon" style="flex: 1 1 400px; min-width: 0; min-height: 440px; box-sizing: border-box; border: 2px dashed #000000; padding: 28px; display: flex; flex-direction: column; justify-content: space-between; gap: 28px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase">Chillout · Edition 10</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; border: 1px dashed #000000; padding: 6px 10px">Coming soon</span>
+</div>
+<div aria-hidden="true" style="font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: 150px; line-height: 0.8; letter-spacing: -0.03em; color: transparent; -webkit-text-stroke: 2px #000000">10</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-family: Montserrat, Inter, sans-serif; font-weight: 600; font-size: 34px; line-height: 1">May 2027</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #5C5C5C">Date and line-up announced soon</span>
+</div>
+<a href="#newsletter" style="display: flex; align-items: center; justify-content: space-between; min-height: 56px; padding: 0 20px; border: 2px solid #000000; font-weight: 600; font-size: 16px"><span>Notify me</span><span>→</span></a>
+</article>
+</div>
+
+</div>
+</section>
+
+<section id="tickets" style="background: #000000; color: #FFFFFF">
+<div style="max-width: 1280px; margin: 0 auto; padding: clamp(64px, 9vw, 120px) clamp(20px, 4vw, 32px); display: flex; flex-wrap: wrap; gap: 48px">
+<div style="flex: 1 1 320px; max-width: 440px; display: flex; flex-direction: column; gap: 24px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #A3A3A3">Chodbovica 5</span>
+<h2 style="margin: 0; font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: clamp(44px, 6.5vw, 92px); line-height: 0.95; letter-spacing: -0.02em; text-transform: uppercase">Tickets</h2>
+<p style="margin: 0; font-size: 18px; line-height: 1.55; color: #D4D4D4">Buy them right here without leaving the site. Sales run through Tootoot: your ticket arrives by email and also lives in the Tootoot app.</p>
+<div style="display: flex; flex-direction: column; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #A3A3A3">
+<span>01 — Pick your tickets</span>
+<span>02 — Pay by card</span>
+<span>03 — Show the QR code at the door</span>
+</div>
+</div>
+<div style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<!-- Tootoot ticket widget (Chodbovica 5). For a new edition, paste the new embed code from the event admin on tootoot.fm. -->
+<div style="min-height: 460px">
+<iframe id="toot-ifr1a16027efa3" title="Tootoot tickets for Chodbovica 5" width="100%" scrolling="no" frameborder="0" allowtransparency="true" src="https://tootoot.fm/buy-embedded/?event-id=6abe3202504189a5a5f654fd&amp;ifr-id=toot-ifr1a16027efa3&amp;lang=sk&amp;theme=dark,transparent&amp;info-head=true"></iframe>
+<script>!function(e,t,o,r,n){var a,i=t.getElementsByTagName(o)[0],s="TootootIframesAsyncLoad";if(e[s]||(e[s]=[]),t.getElementById(r)){var c=e.TootootIframes;c?c.register(n):e[s].push(n)}else e[s].push(n),(a=t.createElement(o)).id=r,a.src="https://tootoot.fm/buy-embedded/host.v2.js",i.parentNode.insertBefore(a,i)}(window,document,"script","tootoot-iframe-channel","toot-ifr1a16027efa3");</script>
+</div>
+<a href="https://tootoot.fm/sk/events/6abe3202504189a5a5f654fd" target="_blank" rel="noopener" style="align-self: flex-start; font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #A3A3A3; padding: 12px 0; border-bottom: 1px solid #333333">Widget not loading? Open on Tootoot ↗</a>
+</div>
+</div>
+</section>
+
+<section id="about" style="background: #FFFFFF; color: #000000">
+<div style="max-width: 1280px; margin: 0 auto; padding: clamp(64px, 9vw, 120px) clamp(20px, 4vw, 32px); display: flex; flex-wrap: wrap; gap: 40px 64px">
+<h2 style="flex: 1 1 280px; margin: 0; font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: clamp(44px, 6.5vw, 92px); line-height: 0.95; letter-spacing: -0.02em; text-transform: uppercase">About</h2>
+<div style="flex: 2 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 28px">
+<p style="margin: 0; font-size: clamp(26px, 3.2vw, 40px); line-height: 1.2; font-weight: 600; letter-spacing: -0.01em">We create emotions.</p>
+<p style="margin: 0; font-size: 18px; line-height: 1.6; color: #5C5C5C; max-width: 640px">We're a crew from Košice who love events and electronic music, and we want to push the scene further. Since 2021 we've been throwing student parties together with student associations: Chodbovica, the multi-stage indoor night at Jedlíkova 7, and Chillout, the free open-air at Jedlíkova 9 where a sunset set turns into a party.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 24px 48px; padding-top: 28px; border-top: 2px solid #000000">
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: 44px; line-height: 1">2021</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #5C5C5C">First party</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: 44px; line-height: 1">1400+</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #5C5C5C">Guests at Chodbovica</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: 44px; line-height: 1">500+</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #5C5C5C">Guests at Chillout</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: 44px; line-height: 1">13</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #5C5C5C">Editions so far</span></div>
+</div>
+<p style="margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7; letter-spacing: 0.08em; text-transform: uppercase; color: #5C5C5C">Worked with: Red Bull · Stock · Jägermeister · Šariš · Promotime · Accenture</p>
+<a href="#contact" style="align-self: flex-start; display: inline-flex; align-items: center; min-height: 52px; padding: 0 24px; border: 2px solid #000000; font-weight: 600; font-size: 16px">Partnerships &amp; booking →</a>
+</div>
+</div>
+</section>
+
+<section id="archive" style="background: #000000; color: #FFFFFF">
+<div style="max-width: 1280px; margin: 0 auto; padding: clamp(64px, 9vw, 120px) clamp(20px, 4vw, 32px); display: flex; flex-direction: column; gap: 40px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #A3A3A3">Past editions</span>
+<h2 style="margin: 0; font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: clamp(44px, 6.5vw, 92px); line-height: 0.95; letter-spacing: -0.02em; text-transform: uppercase">Archive</h2>
+</div>
+<a href="#contact" style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; padding: 12px 0; border-bottom: 1px solid #FFFFFF">More on Instagram →</a>
+</div>
+<div class="bp-archive">
+<figure><img src="assets/archive/chodbovica-dj.jpg" alt="DJ behind the decks in purple light at Chodbovica" loading="lazy" width="432" height="540"><figcaption>CHODBOVICA · Jedlíkova 7</figcaption></figure>
+<figure><img src="assets/archive/chillout-crowd.jpg" alt="Hands up and a phone filming the stage at Chillout" loading="lazy" width="432" height="540"><figcaption>CHILLOUT · Jedlíkova 9</figcaption></figure>
+<figure><img src="assets/archive/chodbovica-friends.jpg" alt="Friends hugging on the dancefloor at Chodbovica" loading="lazy" width="432" height="540"><figcaption>CHODBOVICA · Jedlíkova 7</figcaption></figure>
+<figure><img src="assets/archive/chillout-dj.jpg" alt="DJ under blue stage lights at the Chillout open-air" loading="lazy" width="432" height="540"><figcaption>CHILLOUT · Jedlíkova 9</figcaption></figure>
+<figure><img src="assets/archive/chodbovica-dance.jpg" alt="Dancing in red light at Chodbovica" loading="lazy" width="432" height="540"><figcaption>CHODBOVICA · Jedlíkova 7</figcaption></figure>
+<figure><img src="assets/archive/chillout-chairs.jpg" alt="A couple in deck chairs on the grass at Chillout" loading="lazy" width="432" height="540"><figcaption>CHILLOUT · Jedlíkova 9</figcaption></figure>
+</div>
+</div>
+</section>
+
+<section id="newsletter" aria-label="Newsletter" style="background: #FFFFFF; color: #000000">
+<div style="max-width: 1280px; margin: 0 auto; padding: clamp(64px, 9vw, 112px) clamp(20px, 4vw, 32px); display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 40px">
+<div style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: clamp(36px, 4.6vw, 64px); line-height: 1; letter-spacing: -0.02em; text-transform: uppercase">Be first when tickets drop</h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.5; color: #5C5C5C">We'll email you when a new Chodbovica or Chillout edition is announced and tickets go on sale.</p>
+</div>
+<form style="flex: 1 1 420px; max-width: 520px; display: flex; flex-direction: column; gap: 10px">
+<label for="bp-email" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #5C5C5C">Email</label>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<input id="bp-email" type="email" placeholder="you@email.com" style="flex: 1 1 240px; min-width: 0; min-height: 56px; padding: 0 18px; border: 2px solid #000000; background: #FFFFFF; color: #000000; font-size: 16px; font-family: Inter, system-ui, sans-serif; box-sizing: border-box">
+<button type="submit" style="min-height: 56px; padding: 0 28px; border: 0; background: #000000; color: #FFFFFF; font-size: 16px; font-weight: 600; font-family: Inter, system-ui, sans-serif; cursor: pointer">Notify me</button>
+</div>
+</form>
+</div>
+</section>
+
+<footer id="contact" style="background: #000000; color: #FFFFFF; border-top: 1px solid #262626">
+<div style="max-width: 1280px; margin: 0 auto; padding: clamp(56px, 8vw, 96px) clamp(20px, 4vw, 32px) 32px; display: flex; flex-direction: column; gap: 56px">
+<div style="display: flex; flex-wrap: wrap; gap: 40px 64px">
+<div style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #A3A3A3">Contact</span>
+<a href="mailto:info@example.com" style="font-size: 18px; font-weight: 500; padding: 4px 0">[info@basepresents.sk]</a>
+<span style="font-size: 18px; font-weight: 500">[+421 9XX XXX XXX]</span>
+</div>
+<div style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #A3A3A3">Booking</span>
+<a href="mailto:booking@example.com" style="font-size: 18px; font-weight: 500; padding: 4px 0">[booking@basepresents.sk]</a>
+</div>
+<div style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #A3A3A3">Follow us</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 18px; font-weight: 500">
+<a href="#" style="padding: 4px 0">Instagram</a>
+<a href="#" style="padding: 4px 0">Facebook</a>
+<a href="#" style="padding: 4px 0">TikTok</a>
+</div>
+</div>
+</div>
+<img src="assets/base-logo-white.png" alt="" aria-hidden="true" style="width: 100%; height: auto; aspect-ratio: 1955 / 622; display: block">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding-top: 24px; border-top: 1px solid #262626; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A3A3A3">
+<span>© 2026 Base Presents</span>
+<span>Tickets via Tootoot</span>
+<a href="#top" style="padding: 4px 0">Back to top ↑</a>
+</div>
+</div>
+</footer>
+
+</div>
+
+<script>
+  // Countdown in the hero card (next event: Chodbovica 5).
+  // Set the real date and time here (local time, ISO format).
+  const EVENT_DATE = '2026-11-16T21:07';
+
+  (function () {
+    const target = new Date(EVENT_DATE).getTime();
+    const pad = (n) => String(n).padStart(2, '0');
+    const set = (key, value) => {
+      const el = document.querySelector('[data-cd="' + key + '"]');
+      if (!el || el.textContent === value) return;
+      el.textContent = value;
+      el.classList.remove('bp-flip');
+      void el.offsetWidth; // restart the animation
+      el.classList.add('bp-flip');
+    };
+    function tick() {
+      if (isNaN(target)) return;
+      const diff = Math.max(0, target - Date.now());
+      set('days', pad(Math.floor(diff / 86400000)));
+      set('hours', pad(Math.floor(diff / 3600000) % 24));
+      set('mins', pad(Math.floor(diff / 60000) % 60));
+      set('secs', pad(Math.floor(diff / 1000) % 60));
+    }
+    tick();
+    setInterval(tick, 1000);
+  })();
+
+  // ---- Animations ----
+  (function () {
+    // What fades in on scroll. [selector, effect, base delay (s), stagger between siblings (s)]
+    const REVEALS = [
+      ['#top > div:first-child', 'reveal', 0, 0],
+      ['#top h1 img', 'wipe', 0.15, 0],
+      ['#top h1 > span', 'reveal', 0.9, 0],
+      ['#top > div:last-child > *', 'reveal', 1.0, 0.15],
+      ['section h2', 'rise', 0, 0],
+      ['#events h2 + p, #events h3, #events h3 + p', 'reveal', 0.1, 0],
+      ['#events a[aria-label$="photos"]', 'reveal', 0.1, 0.05],
+      ['#events article', 'reveal', 0.15, 0],
+      ['#tickets > div > div', 'reveal', 0.1, 0.15],
+      ['#about p, #about a, #about div[style*="border-top"]', 'reveal', 0.1, 0.12],
+      ['#archive figure', 'reveal', 0, 0.1],
+      ['#newsletter p, #newsletter form', 'reveal', 0.1, 0.12],
+      ['#contact > div > div:first-child > div', 'reveal', 0, 0.1],
+      ['#contact img', 'wipe', 0.1, 0]
+    ];
+
+    const els = [];
+    REVEALS.forEach(([sel, fx, base, step]) => {
+      document.querySelectorAll(sel).forEach((el) => {
+        if (el.classList.contains('bp-' + fx)) return;
+        const idx = Array.prototype.indexOf.call(el.parentNode.children, el);
+        el.classList.add('bp-' + fx);
+        el.style.setProperty('--d', (base + idx * step).toFixed(2) + 's');
+        els.push(el);
+      });
+    });
+
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+        });
+      }, { rootMargin: '0px 0px -8% 0px' });
+      els.forEach((el) => io.observe(el));
+    } else {
+      els.forEach((el) => el.classList.add('is-in'));
+    }
+
+    // Sticky header hides on scroll down, returns on scroll up; progress line on top.
+    const header = document.querySelector('.bp-header');
+    const bar = document.querySelector('.bp-progress');
+    let lastY = window.scrollY, ticking = false;
+    function onScroll() {
+      const y = window.scrollY;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      if (bar) bar.style.transform = 'scaleX(' + (max > 0 ? y / max : 0) + ')';
+      if (header) header.classList.toggle('is-hidden', y > lastY && y > 200);
+      lastY = y;
+      ticking = false;
+    }
+    window.addEventListener('scroll', () => {
+      if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
+    }, { passive: true });
+    onScroll();
+  })();
+</script>
+</body>
+</html>

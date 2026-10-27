@@ -1,0 +1,9 @@
+# Not part of the website
+gencisearch-otazky.md
+
+# Local Claude settings
+.claude/settings.local.json
+
+# OS junk
+Thumbs.db
+.DS_Store

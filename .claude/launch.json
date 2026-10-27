@@ -1,0 +1,7 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "site", "runtimeExecutable": "python", "runtimeArgs": ["-m", "http.server", "8765"], "port": 8765 },
+    { "name": "genci", "runtimeExecutable": "python", "runtimeArgs": ["-m", "http.server", "8766", "--directory", "E:/CLAUDE/genci-testlab/public"], "port": 8766 }
+  ]
+}
