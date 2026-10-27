@@ -1,1 +1,28 @@
-[]
+[
+ {
+  "slug": "chodbovica-highlights",
+  "title": "Chodbovica · Highlights",
+  "date": "2025-11-11",
+  "series": "Chodbovica",
+  "by": "Base Presents",
+  "count": 7,
+  "cover": {
+   "f": "006.jpg",
+   "w": 464,
+   "h": 540
+  }
+ },
+ {
+  "slug": "chillout-highlights",
+  "title": "Chillout · Highlights",
+  "date": "2025-09-23",
+  "series": "Chillout",
+  "by": "Base Presents",
+  "count": 10,
+  "cover": {
+   "f": "002.jpg",
+   "w": 464,
+   "h": 540
+  }
+ }
+]
