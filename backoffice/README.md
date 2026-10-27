@@ -90,6 +90,8 @@ Všetko je v jednom súbore **`backoffice/data/base.db`** (SQLite). Tiež nejde 
 
 Kamera v skeneri funguje len na `localhost` alebo cez `https://`. Inak treba kód z lístka zadať ručne.
 
+**Blesk:** po zapnutí kamery sa ukáže tlačidlo **⚡ Flash**, ktoré zapne svetlo na telefóne (hodí sa v tme pri vstupe). Funguje v prehliadačoch, ktoré to webom dovolia, hlavne **Chrome na Androide**. Na iPhone (Safari) web blesk zapnúť nevie: tlačidlo sa neukáže a namiesto neho je tip zvýšiť jas alebo posvietiť.
+
 Podrobný návod (test mód, testovacie karty, webhook, vzhľad, ako ísť naostro): **[../STRIPE.md](../STRIPE.md)**.
 
 Stručne: na stripe.com si vytvor účet, zapni **Test mode** → Developers → API keys → skopíruj **Secret key** do `STRIPE_SECRET_KEY` a reštartuj server.

@@ -19,7 +19,11 @@
   <section id="app" style="display:flex;flex-direction:column;gap:20px">
     <div id="result" class="result bad"><strong>Ready</strong><span>Scan a ticket QR code</span></div>
     <div id="reader"></div>
-    <button class="btn ghost" id="cam" type="button"><span>Start camera</span><span>◉</span></button>
+    <div style="display:flex;gap:8px">
+      <button class="btn ghost" id="cam" type="button"><span>Start camera</span><span>◉</span></button>
+      <button class="btn ghost" id="torch" type="button" hidden aria-pressed="false" style="width:auto;flex:none"><span>⚡ Flash off</span></button>
+    </div>
+    <p class="muted" id="torch-note" hidden style="margin:0;font-size:13px">This phone or browser does not let websites turn on the flash. Turn up the screen brightness or use a light.</p>
     <form id="manual" style="display:flex;gap:8px">
       <input id="code" placeholder="XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" aria-label="Ticket code">
       <button class="btn" type="submit" style="width:auto"><span>Check</span></button>
@@ -65,13 +69,48 @@
 
   $('manual').onsubmit = (e) => { e.preventDefault(); const c = $('code').value.trim(); if (c) check(c); $('code').value = ''; };
 
+  // ---- Flash (torch) ----
+  // Works where the browser allows it (Chrome on Android). Elsewhere the button stays hidden and a tip is shown.
+  let torchOn = false;
+  function torchSupported() {
+    try {
+      const caps = scanner && scanner.getRunningTrackCapabilities && scanner.getRunningTrackCapabilities();
+      return Boolean(caps && 'torch' in caps);
+    } catch (e) { return false; }
+  }
+  async function setTorch(on) {
+    if (!scanner) return;
+    try {
+      await scanner.applyVideoConstraints({ advanced: [{ torch: on }] });
+      torchOn = on;
+    } catch (e) {
+      torchOn = false;
+      if (on) show({ result: 'error', message: 'Flash could not be turned on' });
+    }
+    $('torch').firstElementChild.textContent = torchOn ? '⚡ Flash on' : '⚡ Flash off';
+    $('torch').setAttribute('aria-pressed', String(torchOn));
+    $('torch').classList.toggle('on', torchOn);
+    $('torch').style.background = torchOn ? '#fff' : '';
+    $('torch').style.color = torchOn ? '#000' : '';
+  }
+  $('torch').onclick = () => setTorch(!torchOn);
+
   $('cam').onclick = async () => {
     if (!window.Html5Qrcode) { show({ result: 'error', message: 'Scanner library did not load' }); return; }
-    if (scanner) { await scanner.stop(); scanner = null; $('cam').firstElementChild.textContent = 'Start camera'; return; }
+    if (scanner) {
+      if (torchOn) await setTorch(false);
+      await scanner.stop(); scanner = null;
+      $('cam').firstElementChild.textContent = 'Start camera';
+      $('torch').hidden = true; $('torch-note').hidden = true;
+      return;
+    }
     scanner = new Html5Qrcode('reader');
     try {
       await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 240 }, (text) => check(text.trim()));
       $('cam').firstElementChild.textContent = 'Stop camera';
+      const ok = torchSupported();
+      $('torch').hidden = !ok;
+      $('torch-note').hidden = ok;
     } catch (err) {
       scanner = null;
       show({ result: 'error', message: 'Camera not available: ' + err });
