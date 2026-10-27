@@ -6,6 +6,7 @@ The site copy is in English. The user (Dejvo) talks in Slovak — reply in Slova
 ## Files
 - `index.html` — the whole page: HTML with inline styles, exported 1:1 from the Claude design canvas, plus a small countdown script at the bottom
 - `assets/base-logo-white.png` — the BASE logo, white on transparent (1955×622). Used in the nav, hero and footer
+- `assets/chodbovica-logo.webp` — Chodbovica wordmark (white letters, black outline, transparent bg, 2000×571), used as the Chodbovica heading in Our events (white section)
 - `favicon.ico`, `assets/favicon-32.png`, `assets/favicon-512.png`, `assets/apple-touch-icon.png` — favicons (white "B" from the logo on black)
 - `assets/og-image.png` — 1200×630 social share preview (Open Graph)
 - `gallery.html` — photo reports: list of albums, or one album with lightbox (`?a=<slug>`, `#n` = open photo n)
