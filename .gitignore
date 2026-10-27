@@ -9,6 +9,6 @@ Thumbs.db
 .DS_Store
 
 # Tickets prototype
-tickets-prototype/node_modules/
-tickets-prototype/.env
-tickets-prototype/data/
+backoffice/node_modules/
+backoffice/.env
+backoffice/data/

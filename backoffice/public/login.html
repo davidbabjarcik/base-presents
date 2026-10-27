@@ -14,7 +14,7 @@
   <span class="badge">Staff</span>
 </header>
 <main class="wrap">
-  <span class="label">Admin &amp; door scanner</span>
+  <span class="label">BASE Hub · team only</span>
   <h1>Log in</h1>
   <form class="card" id="form" novalidate>
     <label><span class="label">Email</span><input id="email" type="email" autocomplete="username" required></label>
@@ -26,8 +26,9 @@
 <script>
   const $ = (id) => document.getElementById(id);
   // Only allow returning to our own staff pages
-  const next = ['/admin', '/scan'].includes(new URLSearchParams(location.search).get('next'))
-    ? new URLSearchParams(location.search).get('next') : '/admin';
+  const PAGES = ['/app', '/tickets', '/scan', '/stock', '/promo', '/stats', '/ideas', '/users'];
+  const wanted = new URLSearchParams(location.search).get('next');
+  const next = PAGES.includes(wanted) ? wanted : '/app';
 
   fetch('/api/me').then((r) => { if (r.ok) location.replace(next); });
 

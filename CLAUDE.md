@@ -12,11 +12,13 @@ The site copy is in English. The user (Dejvo) talks in Slovak — reply in Slova
 
 Open `index.html` directly in a browser — no build step.
 
-`tickets-prototype/` — separate test prototype of own ticket sales (Node 22 + Express + Stripe Checkout in TEST mode,
-SQLite via `node:sqlite`). `npm install && npm start` → http://localhost:4242 (`/buy`, `/scan`, `/admin`).
-Without `STRIPE_SECRET_KEY` in `tickets-prototype/.env` it runs in demo mode with a simulated payment. Refuses `sk_live_` keys.
-`/admin` and `/scan` need a staff login (`/login`, one shared account from `ADMIN_EMAIL` / `ADMIN_PASSWORD`, default email base@base.com; HttpOnly session cookie, in-memory sessions).
-Not connected to the main site; the main site still sells via Tootoot. See `tickets-prototype/README.md`.
+`backoffice/` — **BASE Hub**, internal team app (prototype, runs locally). Node 22 + Express + SQLite (`node:sqlite`).
+`cd backoffice && npm install && npm start` → http://localhost:4242/login. Sections: ticket sales (Stripe Checkout TEST mode
+or demo payment, QR tickets, `/scan` door scanner), stock alko/nealko, promo calendar, event & bar stats, event ideas
+(pros/cons, votes), users. Roles admin / tickets / team (`ACCESS` in `backoffice/auth.js`).
+Accounts are seeded from `backoffice/.env` on first start (not committed); logins are listed in `README.md` and
+`backoffice/README.md`. Data lives in `backoffice/data/base.db` (not committed). Demo rows have `demo = 1`.
+Internal UI copy is English. Full docs (Slovak): `backoffice/README.md`. Not linked from the public site yet.
 
 ## Design rules
 - Strictly black and white: `#000000`, `#FFFFFF`

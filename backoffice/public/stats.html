@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stats · BASE Hub</title>
+<link rel="icon" href="/assets/favicon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/hub.css">
+<script src="/hub.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <span class="label">Compare events</span>
+  <h1>Stats</h1>
+  <div id="demo"></div>
+
+  <div class="row" style="margin-bottom:16px">
+    <div style="display:flex;gap:6px" role="group" aria-label="Series">
+      <button class="icon-btn on" data-s="all" type="button" style="padding:0 12px">All</button>
+      <button class="icon-btn" data-s="Chodbovica" type="button" style="padding:0 12px">Chodbovica</button>
+      <button class="icon-btn" data-s="Chillout" type="button" style="padding:0 12px">Chillout</button>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr))">
+    <section class="panel"><span class="label">Guests per event</span><div id="c-guests"></div></section>
+    <section class="panel"><span class="label">Bar revenue per event</span><div id="c-rev"></div></section>
+    <section class="panel"><span class="label">Bar spend per guest</span><div id="c-pg"></div></section>
+    <section class="panel"><span class="label">Best-selling products (all events, by revenue)</span><div id="c-prod"></div></section>
+  </div>
+
+  <div class="section-title"><h2>Comparison table</h2></div>
+  <div class="scroll"><table>
+    <thead><tr><th>Event</th><th>Date</th><th class="num">Guests</th><th class="num">Bars</th><th class="num">Bar revenue</th>
+      <th class="num">Alko</th><th class="num">Nealko</th><th class="num">€ / guest</th><th>Best bar</th><th>Top product</th></tr></thead>
+    <tbody id="table"></tbody>
+  </table></div>
+
+  <div class="section-title">
+    <h2>Event detail</h2>
+    <label style="flex-direction:row;align-items:center;gap:8px"><span class="label">Event</span><select id="pick" style="width:auto;min-width:220px"></select></label>
+  </div>
+  <div id="detail"></div>
+
+  <details class="box" style="margin-top:32px">
+    <summary>Add an event</summary>
+    <form id="new-event" class="form-row">
+      <label><span class="label">Series</span><select name="series"><option>Chodbovica</option><option>Chillout</option><option>Other</option></select></label>
+      <label><span class="label">Edition</span><input name="edition" maxlength="20" placeholder="6"></label>
+      <label><span class="label">Name (optional)</span><input name="name" maxlength="80"></label>
+      <label><span class="label">Date</span><input type="date" name="date"></label>
+      <label><span class="label">Venue</span><input name="venue" maxlength="120" value="Jedlíkova 7, Košice"></label>
+      <button class="btn small" type="submit"><span>Add event</span></button>
+    </form>
+  </details>
+</main>
+<script>
+(async () => {
+  const { h, api, eur, n, date } = Hub;
+  const me = await Hub.start('stats');
+  let stats, series = 'all', picked = null;
+
+  async function load() {
+    stats = await api('/api/stats');
+    const anyDemo = stats.events.some((e) => e.demo);
+    Hub.$('#demo').replaceChildren(anyDemo ? h('div', { class: 'demo-banner' },
+      h('span', {}, 'Numbers marked “demo” are sample data so you can see how the comparison works. Replace them with your real numbers.'),
+      me.role === 'admin' ? h('a', { class: 'link', href: '/users' }, 'Remove demo data →') : null) : '');
+    const pick = Hub.$('#pick');
+    pick.replaceChildren(...stats.events.slice().reverse().map((e) => h('option', { value: e.id }, e.name + (e.date ? ' · ' + date(e.date) : ''))));
+    if (!picked || !stats.events.find((e) => e.id === picked)) picked = (stats.events.slice().reverse().find((e) => e.bar_count) || stats.events[0])?.id;
+    pick.value = picked;
+    render();
+    await renderDetail();
+  }
+
+  function render() {
+    const list = stats.events.filter((e) => series === 'all' || e.series === series);
+    const withNumbers = list.filter((e) => e.attendance || e.bar_revenue);
+    const tag = (e) => e.name + (e.demo ? ' (demo)' : '');
+    Hub.$('#c-guests').replaceChildren(Hub.chart(withNumbers.filter((e) => e.attendance).map((e) => ({ label: tag(e), value: e.attendance, text: n(e.attendance), tip: `${e.name} · ${date(e.date)} · ${n(e.attendance)} guests` })), 'No attendance numbers yet'));
+    Hub.$('#c-rev').replaceChildren(Hub.chart(withNumbers.filter((e) => e.bar_revenue).map((e) => ({ label: tag(e), value: e.bar_revenue, text: eur(e.bar_revenue), tip: `${e.name}: alko ${eur(e.alko_revenue)} · nealko ${eur(e.nealko_revenue)}` })), 'No bar sales yet'));
+    Hub.$('#c-pg').replaceChildren(Hub.chart(withNumbers.filter((e) => e.revenue_per_guest).map((e) => ({ label: tag(e), value: e.revenue_per_guest, text: eur(e.revenue_per_guest), tip: `${e.name}: ${eur(e.bar_revenue)} ÷ ${n(e.attendance)} guests` })), 'Needs guests + bar sales'));
+    Hub.$('#c-prod').replaceChildren(Hub.chart(stats.products.map((p) => ({ label: p.product, value: p.revenue, text: eur(p.revenue), tip: `${p.product} (${p.category}): ${n(p.qty)} sold · ${eur(p.revenue)}` })), 'No bar sales yet'));
+
+    Hub.$('#table').replaceChildren(...list.map((e) => h('tr', {},
+      h('td', {}, h('button', { class: 'link', type: 'button', style: 'all:unset;cursor:pointer;text-decoration:underline', onclick: () => { picked = e.id; Hub.$('#pick').value = e.id; Hub.run(renderDetail); Hub.$('#detail').scrollIntoView({ behavior: 'smooth' }); } }, e.name),
+        e.demo ? h('span', { class: 'chip dashed', style: 'margin-left:6px' }, 'demo') : null),
+      h('td', {}, date(e.date)),
+      h('td', { class: 'num' }, e.attendance ? n(e.attendance) : '—'),
+      h('td', { class: 'num' }, e.bar_count || '—'),
+      h('td', { class: 'num' }, e.bar_revenue ? eur(e.bar_revenue) : '—'),
+      h('td', { class: 'num' }, e.alko_revenue ? eur(e.alko_revenue) : '—'),
+      h('td', { class: 'num' }, e.nealko_revenue ? eur(e.nealko_revenue) : '—'),
+      h('td', { class: 'num' }, e.revenue_per_guest ? eur(e.revenue_per_guest) : '—'),
+      h('td', {}, e.top_bar ? `${e.top_bar.name} (${eur(e.top_bar.revenue)})` : '—'),
+      h('td', {}, e.top_product ? `${e.top_product.product} (${n(e.top_product.qty)}×)` : '—'))));
+  }
+
+  async function renderDetail() {
+    const e = stats.events.find((x) => x.id === Number(picked));
+    if (!e) { Hub.$('#detail').replaceChildren(h('p', { class: 'muted' }, 'No events yet.')); return; }
+    const bars = await api(`/api/events/${e.id}/bars`);
+
+    const evForm = h('form', { class: 'form-row', onsubmit: (ev) => Hub.run(async () => {
+      ev.preventDefault();
+      await api('/api/events/' + e.id, { method: 'PUT', body: Hub.formData(ev.target) });
+      Hub.toast('Event saved'); await load();
+    }) },
+      h('label', {}, h('span', { class: 'label' }, 'Series'), h('select', { name: 'series' }, ['Chodbovica', 'Chillout', 'Other'].map((s) => h('option', { selected: s === e.series }, s)))),
+      h('label', {}, h('span', { class: 'label' }, 'Edition'), h('input', { name: 'edition', value: e.edition || '' })),
+      h('label', {}, h('span', { class: 'label' }, 'Name'), h('input', { name: 'name', value: e.name })),
+      h('label', {}, h('span', { class: 'label' }, 'Date'), h('input', { type: 'date', name: 'date', value: e.date || '' })),
+      h('label', {}, h('span', { class: 'label' }, 'Venue'), h('input', { name: 'venue', value: e.venue || '' })),
+      h('label', {}, h('span', { class: 'label' }, 'Guests' + (e.demo ? ' (demo)' : '')), h('input', { name: 'attendance', inputmode: 'numeric', value: e.attendance ?? '' })),
+      h('label', { style: 'grid-column:1/-1' }, h('span', { class: 'label' }, 'Notes'), h('textarea', { name: 'notes' }, e.notes || '')),
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' },
+        h('button', { class: 'btn small', type: 'submit' }, h('span', {}, 'Save event')),
+        h('button', { class: 'btn ghost small', type: 'button', onclick: () => Hub.run(async () => {
+          if (!confirm(`Delete ${e.name} with all its bars and sales?`)) return;
+          await api('/api/events/' + e.id, { method: 'DELETE' }); picked = null; await load();
+        }) }, h('span', {}, 'Delete event'))));
+
+    const barCards = bars.map((b) => {
+      const total = b.sales.reduce((s, x) => s + x.revenue_cents, 0);
+      return h('section', { class: 'panel' },
+        h('div', { class: 'row' }, h('h2', {}, b.name), h('span', { class: 'label' }, eur(total)),
+          h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Delete bar ' + b.name, onclick: () => Hub.run(async () => {
+            if (!confirm(`Delete bar ${b.name}?`)) return; await api('/api/bars/' + b.id, { method: 'DELETE' }); await load();
+          }) }, '×')),
+        Hub.chart(b.sales.map((s) => ({ label: s.product, value: s.revenue_cents, text: eur(s.revenue_cents), tip: `${s.product} · ${s.category} · ${n(s.qty)} sold · ${eur(s.revenue_cents)}` })), 'No sales recorded'),
+        h('details', {}, h('summary', { class: 'label', style: 'cursor:pointer;min-height:36px;display:flex;align-items:center' }, 'Rows / delete'),
+          h('ul', { style: 'list-style:none;margin:0;padding:0;font-size:13px' }, b.sales.map((s) => h('li', { style: 'display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #222' },
+            `${s.product} · ${s.category} · ${n(s.qty)}× · ${eur(s.revenue_cents)}`,
+            h('button', { class: 'icon-btn', type: 'button', style: 'min-width:32px;min-height:32px', 'aria-label': 'Delete row', onclick: () => Hub.run(async () => { await api('/api/sales/' + s.id, { method: 'DELETE' }); await load(); }) }, '×'))))),
+        h('form', { class: 'form-row', style: 'grid-template-columns:repeat(auto-fill,minmax(min(100%,110px),1fr))', onsubmit: (ev) => Hub.run(async () => {
+          ev.preventDefault(); await api(`/api/bars/${b.id}/sales`, { body: Hub.formData(ev.target) }); Hub.toast('Added'); await load();
+        }) },
+          h('label', {}, h('span', { class: 'label' }, 'Product'), h('input', { name: 'product', required: true, list: 'products' })),
+          h('label', {}, h('span', { class: 'label' }, 'Type'), h('select', { name: 'category' }, h('option', { value: 'alko' }, 'Alko'), h('option', { value: 'nealko' }, 'Nealko'))),
+          h('label', {}, h('span', { class: 'label' }, 'Sold (pcs)'), h('input', { name: 'qty', inputmode: 'decimal', required: true })),
+          h('label', {}, h('span', { class: 'label' }, 'Revenue €'), h('input', { name: 'revenue', inputmode: 'decimal' })),
+          h('button', { class: 'btn small', type: 'submit' }, h('span', {}, '+ Add'))));
+    });
+
+    const best = bars.map((b) => ({ b, total: b.sales.reduce((s, x) => s + x.revenue_cents, 0) })).sort((a, z) => z.total - a.total)[0];
+    Hub.$('#detail').replaceChildren(
+      h('section', { class: 'panel', style: 'margin-bottom:16px' }, h('span', { class: 'label' }, 'Event'), evForm),
+      h('div', { class: 'row', style: 'margin:24px 0 12px' },
+        h('h2', {}, `Bars (${bars.length})` + (best && best.total ? ` · best: ${best.b.name}` : '')),
+        h('form', { style: 'display:flex;gap:8px', onsubmit: (ev) => Hub.run(async () => {
+          ev.preventDefault(); await api(`/api/events/${e.id}/bars`, { body: Hub.formData(ev.target) }); await load();
+        }) }, h('input', { name: 'name', placeholder: 'New bar, e.g. Main bar', required: true, style: 'min-height:44px;width:200px' }),
+          h('button', { class: 'btn small', type: 'submit' }, h('span', {}, '+ Bar')))),
+      h('datalist', { id: 'products' }, stats.products.map((p) => h('option', { value: p.product }))),
+      h('div', { class: 'grid', style: 'grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))' }, barCards.length ? barCards : h('p', { class: 'muted' }, 'No bars yet. Add the bars this event had, then what each sold.')));
+  }
+
+  document.querySelectorAll('[data-s]').forEach((b) => b.onclick = () => {
+    series = b.dataset.s;
+    document.querySelectorAll('[data-s]').forEach((x) => x.classList.toggle('on', x === b));
+    render();
+  });
+  Hub.$('#pick').onchange = (e) => { picked = Number(e.target.value); Hub.run(renderDetail); };
+  Hub.$('#new-event').onsubmit = (e) => Hub.run(async () => {
+    e.preventDefault();
+    const r = await api('/api/events', { body: Hub.formData(e.target) });
+    picked = r.id; e.target.reset(); Hub.toast('Event added'); await load();
+  });
+  await load();
+})();
+</script>
+</body>
+</html>

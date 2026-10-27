@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ideas · BASE Hub</title>
+<link rel="icon" href="/assets/favicon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/hub.css">
+<script src="/hub.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <span class="label">New event ideas · everyone can add, vote and add pros &amp; cons</span>
+  <h1>Ideas</h1>
+
+  <details class="box" id="form-box">
+    <summary>New idea</summary>
+    <form id="form" style="display:flex;flex-direction:column;gap:12px">
+      <label><span class="label">Idea</span><input name="title" required maxlength="120" placeholder="e.g. Winter Chillout indoors"></label>
+      <label><span class="label">What is it</span><textarea name="description" maxlength="2000"></textarea></label>
+      <label><span class="label">Why (what problem does it solve, who is it for)</span><textarea name="why" maxlength="1000"></textarea></label>
+      <button class="btn small" type="submit" style="align-self:flex-start"><span>Add idea</span></button>
+    </form>
+  </details>
+
+  <div class="row" style="margin-bottom:16px">
+    <div style="display:flex;gap:6px;flex-wrap:wrap" role="group" aria-label="Filter by status" id="filters"></div>
+  </div>
+  <div id="list" style="display:flex;flex-direction:column;gap:16px"></div>
+</main>
+<script>
+(async () => {
+  const { h, api } = Hub;
+  const me = await Hub.start('ideas');
+  const isAdmin = me.role === 'admin';
+  const STATUS = { new: 'New', discussing: 'Discussing', approved: 'Approved', rejected: 'Rejected' };
+  let data, filter = 'open';
+
+  const filters = [['open', 'Open'], ['all', 'All'], ...Object.entries(STATUS)];
+  Hub.$('#filters').append(...filters.map(([k, label]) => h('button', {
+    class: 'icon-btn' + (k === filter ? ' on' : ''), type: 'button', 'data-k': k, style: 'padding:0 12px',
+    onclick: (e) => { filter = k; document.querySelectorAll('#filters button').forEach((b) => b.classList.toggle('on', b === e.currentTarget)); render(); }
+  }, label)));
+
+  function pointList(idea, kind) {
+    const items = idea[kind];
+    return h('div', {},
+      h('span', { class: 'label' }, kind === 'plus' ? `+ Pros (${items.length})` : `− Cons (${items.length})`),
+      h('ul', { style: 'margin-top:8px' }, items.map((p) => h('li', {},
+        h('b', {}, kind === 'plus' ? '+' : '−'),
+        h('span', { style: 'flex:1' }, p.text, ' ', h('span', { class: 'who' }, p.author || '')),
+        (isAdmin || p.author_id === me.id) ? h('button', { class: 'icon-btn', type: 'button', style: 'min-width:28px;min-height:28px;font-size:12px', 'aria-label': 'Delete point',
+          onclick: () => Hub.run(async () => { await api('/api/points/' + p.id, { method: 'DELETE' }); await load(); }) }, '×') : null))),
+      h('form', { onsubmit: (e) => Hub.run(async () => {
+        e.preventDefault();
+        await api(`/api/ideas/${idea.id}/points`, { body: { kind, text: e.target.text.value } });
+        await load();
+      }) }, h('input', { name: 'text', required: true, maxlength: '300', placeholder: kind === 'plus' ? 'Add a pro…' : 'Add a con…', 'aria-label': kind === 'plus' ? 'Add a pro' : 'Add a con' }),
+        h('button', { class: 'icon-btn', type: 'submit', 'aria-label': 'Add' }, '+')));
+  }
+
+  function render() {
+    const list = data.ideas.filter((i) => filter === 'all' || (filter === 'open' ? !['approved', 'rejected'].includes(i.status) : i.status === filter));
+    Hub.$('#list').replaceChildren(...(list.length ? list.map((i) => h('article', { class: 'idea' },
+      h('div', { class: 'idea-head' },
+        h('div', { class: 'votes', role: 'group', 'aria-label': 'Vote' },
+          h('button', { class: 'icon-btn' + (i.my_vote === 1 ? ' on' : ''), type: 'button', 'aria-label': 'Vote for', 'aria-pressed': String(i.my_vote === 1),
+            onclick: () => Hub.run(async () => { await api(`/api/ideas/${i.id}/vote`, { body: { value: 1 } }); await load(); }) }, '▲'),
+          h('b', {}, (i.score > 0 ? '+' : '') + i.score),
+          h('button', { class: 'icon-btn' + (i.my_vote === -1 ? ' on' : ''), type: 'button', 'aria-label': 'Vote against', 'aria-pressed': String(i.my_vote === -1),
+            onclick: () => Hub.run(async () => { await api(`/api/ideas/${i.id}/vote`, { body: { value: -1 } }); await load(); }) }, '▼'),
+          h('span', { class: 'label', style: 'font-size:10px' }, `${i.ups}↑ ${i.downs}↓`)),
+        h('div', { style: 'flex:1;min-width:0;display:flex;flex-direction:column;gap:8px' },
+          h('div', { style: 'display:flex;flex-wrap:wrap;gap:8px;align-items:center' },
+            h('h2', { style: 'font-size:22px' }, i.title),
+            h('span', { class: 'chip' + (i.status === 'approved' ? ' solid' : i.status === 'rejected' ? ' dashed' : '') }, STATUS[i.status]),
+            i.demo ? h('span', { class: 'chip dashed' }, 'demo') : null),
+          h('span', { class: 'label' }, `${i.author || 'Someone'} · ${Hub.when(i.created_at)}`),
+          i.description ? h('p', { style: 'margin:0;line-height:1.55' }, i.description) : null,
+          i.why ? h('p', { class: 'muted', style: 'margin:0' }, h('b', { style: 'color:#fff' }, 'Why: '), i.why) : null)),
+      h('div', { class: 'pm' }, pointList(i, 'plus'), pointList(i, 'minus')),
+      (isAdmin || i.mine) ? h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid #222;padding-top:12px' },
+        isAdmin ? h('label', { style: 'flex-direction:row;align-items:center;gap:8px' }, h('span', { class: 'label' }, 'Status'),
+          h('select', { style: 'width:auto;min-height:40px', onchange: (e) => Hub.run(async () => { await api('/api/ideas/' + i.id, { method: 'PUT', body: { status: e.target.value } }); await load(); }) },
+            Object.entries(STATUS).map(([k, v]) => h('option', { value: k, selected: k === i.status }, v)))) : null,
+        h('button', { class: 'btn ghost small', type: 'button', onclick: () => Hub.run(async () => {
+          if (!confirm('Delete this idea?')) return; await api('/api/ideas/' + i.id, { method: 'DELETE' }); await load();
+        }) }, h('span', {}, 'Delete'))) : null))
+      : [h('p', { class: 'muted' }, 'No ideas here yet.')]));
+  }
+
+  async function load() { data = await api('/api/ideas'); render(); }
+  Hub.$('#form').onsubmit = (e) => Hub.run(async () => {
+    e.preventDefault();
+    await api('/api/ideas', { body: Hub.formData(e.target) });
+    e.target.reset(); Hub.$('#form-box').open = false; Hub.toast('Idea added'); await load();
+  });
+  await load();
+})();
+</script>
+</body>
+</html>

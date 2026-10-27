@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview · BASE Hub</title>
+<link rel="icon" href="/assets/favicon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/hub.css">
+<script src="/hub.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <span class="label" id="hello">BASE Hub</span>
+  <h1>Overview</h1>
+  <div class="grid" id="cards"></div>
+</main>
+<script>
+(async () => {
+  const { h, api, eur, n, date } = Hub;
+  const me = await Hub.start('app');
+  Hub.$('#hello').textContent = 'Hi, ' + me.name;
+  const cards = Hub.$('#cards');
+  const can = (s) => me.sections.includes(s);
+  const card = (title, ...body) => { const c = h('section', { class: 'panel' }, h('span', { class: 'label' }, title), ...body); cards.append(c); return c; };
+
+  // Next event (everyone)
+  const events = await api('/api/events');
+  const today = Hub.today();
+  const next = events.filter((e) => e.date && e.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0];
+  if (next) {
+    const days = Math.ceil((new Date(next.date + 'T12:00') - new Date(today + 'T12:00')) / 86400000);
+    card('Next event', h('h2', {}, next.name), h('p', { class: 'big' }, days === 0 ? 'Today' : days + ' days'),
+      h('p', { class: 'muted', style: 'margin:0' }, date(next.date) + ' · ' + (next.venue || '')));
+  }
+
+  if (can('tickets')) {
+    const t = await api('/api/tickets/summary');
+    card('Tickets · ' + t.event.name, h('p', { class: 'big' }, t.sold + ' sold'),
+      h('p', { class: 'muted', style: 'margin:0' }, `${t.remaining} left · ${eur(t.revenueCents)} · ${t.checkedIn} checked in`),
+      h('a', { class: 'more', href: '/tickets' }, 'Ticket sales →'));
+  }
+
+  if (can('stock')) {
+    const s = await api('/api/stock');
+    const low = s.items.filter((i) => i.qty < i.min_qty);
+    card('Stock', h('p', { class: 'big' }, low.length ? low.length + ' low' : 'All OK'),
+      low.length ? h('ul', { class: 'muted', style: 'margin:0;padding-left:18px' }, low.slice(0, 5).map((i) => h('li', {}, `${i.name}: ${n(i.qty)} ${i.unit} (min ${n(i.min_qty)})`)))
+        : h('p', { class: 'muted', style: 'margin:0' }, s.items.length + ' items in stock'),
+      h('a', { class: 'more', href: '/stock' }, 'Stock →'));
+  }
+
+  if (can('promo')) {
+    const p = await api('/api/promo');
+    card('Upcoming promo', p.upcoming.length
+      ? h('ul', { style: 'margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px' },
+        p.upcoming.slice(0, 5).map((x) => h('li', {}, h('b', {}, date(x.date)), ' · ', x.channel, ' · ', x.title)))
+      : h('p', { class: 'muted' }, 'Nothing planned.'),
+    h('a', { class: 'more', href: '/promo' }, 'Promo calendar →'));
+  }
+
+  if (can('ideas')) {
+    const i = await api('/api/ideas');
+    card('Top ideas', i.ideas.length
+      ? h('ul', { style: 'margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px' },
+        i.ideas.slice(0, 4).map((x) => h('li', {}, x.title, h('span', { class: 'muted' }, `  ${x.score > 0 ? '+' : ''}${x.score}`))))
+      : h('p', { class: 'muted' }, 'No ideas yet. Add the first one!'),
+    h('a', { class: 'more', href: '/ideas' }, 'Ideas →'));
+  }
+
+  if (can('stats')) {
+    const past = events.filter((e) => e.date && e.date < today && e.attendance).sort((a, b) => b.date.localeCompare(a.date))[0];
+    card('Last event', past ? h('h2', {}, past.name) : h('p', { class: 'muted' }, 'No numbers yet.'),
+      past ? h('p', { class: 'big' }, n(past.attendance) + ' guests') : null,
+      h('a', { class: 'more', href: '/stats' }, 'Stats →'));
+  }
+})();
+</script>
+</body>
+</html>

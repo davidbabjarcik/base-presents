@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stock · BASE Hub</title>
+<link rel="icon" href="/assets/favicon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/hub.css">
+<script src="/hub.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <span class="label">Base sklad</span>
+  <h1>Stock</h1>
+  <p class="muted" id="low" style="margin:-8px 0 24px"></p>
+
+  <details class="box" open>
+    <summary>Record a movement</summary>
+    <form id="move" class="form-row">
+      <label><span class="label">Item</span><select name="item_id" id="move-item" required></select></label>
+      <label><span class="label">What happened</span>
+        <select name="reason" id="move-reason">
+          <option value="purchase">Purchase / delivery (+)</option>
+          <option value="event">Used at an event (−)</option>
+          <option value="loss">Loss / broken (−)</option>
+          <option value="correction">Stocktake: set counted amount (=)</option>
+        </select></label>
+      <label><span class="label" id="amount-label">Amount</span><input name="amount" inputmode="decimal" required></label>
+      <label id="event-wrap"><span class="label">Event</span><select name="event_id" id="move-event"><option value="">—</option></select></label>
+      <label><span class="label">Note</span><input name="note" maxlength="300"></label>
+      <button class="btn small" type="submit"><span>Save</span><span>→</span></button>
+    </form>
+  </details>
+
+  <div class="section-title">
+    <h2>Items</h2>
+    <div style="display:flex;gap:6px" role="group" aria-label="Filter">
+      <button class="icon-btn on" data-f="all" type="button" style="padding:0 12px">All</button>
+      <button class="icon-btn" data-f="alko" type="button" style="padding:0 12px">Alko</button>
+      <button class="icon-btn" data-f="nealko" type="button" style="padding:0 12px">Nealko</button>
+    </div>
+  </div>
+  <div class="scroll"><table>
+    <thead><tr><th>Item</th><th>Type</th><th class="num">In stock</th><th class="num">Minimum</th><th>Note</th><th></th></tr></thead>
+    <tbody id="items"></tbody>
+  </table></div>
+
+  <details class="box" id="item-box" style="margin-top:24px">
+    <summary id="item-title">Add an item</summary>
+    <form id="item" class="form-row">
+      <input type="hidden" name="id">
+      <label><span class="label">Name</span><input name="name" required maxlength="80" placeholder="e.g. Pivo Šariš (sud 50 l)"></label>
+      <label><span class="label">Type</span><select name="category"><option value="alko">Alko</option><option value="nealko">Nealko</option></select></label>
+      <label><span class="label">Unit</span><select name="unit" id="units"></select></label>
+      <label><span class="label">Minimum (warn below)</span><input name="min_qty" inputmode="decimal" value="0"></label>
+      <label><span class="label">Note</span><input name="note" maxlength="300"></label>
+      <div style="display:flex;gap:8px">
+        <button class="btn small" type="submit"><span>Save item</span></button>
+        <button class="btn ghost small" type="button" id="item-cancel"><span>Cancel</span></button>
+      </div>
+    </form>
+  </details>
+
+  <div class="section-title"><h2>Recent movements</h2></div>
+  <div class="scroll"><table>
+    <thead><tr><th>When</th><th>Item</th><th class="num">Change</th><th>Reason</th><th>Event</th><th>Who</th><th>Note</th></tr></thead>
+    <tbody id="moves"></tbody>
+  </table></div>
+</main>
+<script>
+(async () => {
+  const { h, api, n } = Hub;
+  await Hub.start('stock');
+  const REASON = { purchase: 'Purchase', event: 'Event', loss: 'Loss', correction: 'Stocktake' };
+  let data, filter = 'all';
+
+  const events = await api('/api/events');
+  Hub.$('#move-event').append(...events.map((e) => h('option', { value: e.id }, e.name)));
+
+  function toggleEvent() {
+    const r = Hub.$('#move-reason').value;
+    Hub.$('#event-wrap').style.display = r === 'event' ? '' : 'none';
+    Hub.$('#amount-label').textContent = r === 'correction' ? 'Counted amount' : 'Amount';
+  }
+  Hub.$('#move-reason').onchange = toggleEvent; toggleEvent();
+
+  function render() {
+    const items = data.items.filter((i) => filter === 'all' || i.category === filter);
+    const low = data.items.filter((i) => i.qty < i.min_qty);
+    Hub.$('#low').textContent = low.length
+      ? `⚠ ${low.length} item${low.length > 1 ? 's are' : ' is'} below minimum: ${low.map((i) => i.name).join(', ')}`
+      : `${data.items.length} items · everything above minimum`;
+    Hub.$('#items').replaceChildren(...(items.length ? items.map((i) => h('tr', { class: i.qty < i.min_qty ? 'warn-row' : null },
+      h('td', {}, i.name, i.demo ? h('span', { class: 'chip dashed', style: 'margin-left:8px' }, 'demo') : null),
+      h('td', {}, h('span', { class: 'chip' + (i.category === 'alko' ? ' solid' : '') }, i.category)),
+      h('td', { class: 'num' }, h('b', {}, n(i.qty)), ' ' + i.unit, i.qty < i.min_qty ? ' ⚠' : ''),
+      h('td', { class: 'num' }, n(i.min_qty) + ' ' + i.unit),
+      h('td', { class: 'muted' }, i.note || ''),
+      h('td', { class: 'num' },
+        h('button', { class: 'icon-btn', type: 'button', title: 'Edit', 'aria-label': 'Edit ' + i.name, onclick: () => editItem(i) }, '✎'), ' ',
+        h('button', { class: 'icon-btn', type: 'button', title: 'Delete', 'aria-label': 'Delete ' + i.name, onclick: () => Hub.run(async () => {
+          if (!confirm(`Delete ${i.name} and its history?`)) return;
+          await api('/api/stock/items/' + i.id, { method: 'DELETE' }); await load();
+        }) }, '×'))))
+      : [h('tr', {}, h('td', { colspan: '6', class: 'muted' }, 'No items. Add one below.'))]));
+    const sel = Hub.$('#move-item'); const keep = sel.value;
+    sel.replaceChildren(...data.items.map((i) => h('option', { value: i.id }, `${i.name} (${n(i.qty)} ${i.unit})`)));
+    if (keep) sel.value = keep;
+    Hub.$('#moves').replaceChildren(...(data.moves.length ? data.moves.map((m) => h('tr', {},
+      h('td', {}, Hub.when(m.created_at)), h('td', {}, m.item),
+      h('td', { class: 'num' }, (m.delta > 0 ? '+' : '') + n(m.delta) + ' ' + m.unit),
+      h('td', {}, REASON[m.reason] || m.reason), h('td', {}, m.event || ''), h('td', {}, m.user || ''), h('td', { class: 'muted' }, m.note || '')))
+      : [h('tr', {}, h('td', { colspan: '7', class: 'muted' }, 'No movements yet.'))]));
+  }
+
+  async function load() { data = await api('/api/stock'); render(); }
+  Hub.$('#units').append(...(await api('/api/stock')).units.map((u) => h('option', { value: u }, u)));
+  await load();
+
+  document.querySelectorAll('[data-f]').forEach((b) => b.onclick = () => {
+    filter = b.dataset.f;
+    document.querySelectorAll('[data-f]').forEach((x) => x.classList.toggle('on', x === b));
+    render();
+  });
+
+  Hub.$('#move').onsubmit = (e) => Hub.run(async () => {
+    e.preventDefault();
+    const body = Hub.formData(e.target);
+    if (body.reason !== 'event') delete body.event_id;
+    const r = await api('/api/stock/moves', { body });
+    e.target.amount.value = ''; e.target.note.value = '';
+    Hub.toast('Saved · now ' + n(r.qty) + ' in stock');
+    await load();
+  });
+
+  function editItem(i) {
+    const f = Hub.$('#item');
+    f.id.value = i.id; f.name.value = i.name; f.category.value = i.category; f.unit.value = i.unit;
+    f.min_qty.value = i.min_qty; f.note.value = i.note || '';
+    Hub.$('#item-title').textContent = 'Edit: ' + i.name;
+    Hub.$('#item-box').open = true; Hub.$('#item-box').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function resetItem() { Hub.$('#item').reset(); Hub.$('#item').id.value = ''; Hub.$('#item-title').textContent = 'Add an item'; }
+  Hub.$('#item-cancel').onclick = () => { resetItem(); Hub.$('#item-box').open = false; };
+  Hub.$('#item').onsubmit = (e) => Hub.run(async () => {
+    e.preventDefault();
+    const body = Hub.formData(e.target);
+    if (body.id) await api('/api/stock/items/' + body.id, { method: 'PUT', body });
+    else await api('/api/stock/items', { body });
+    Hub.toast('Item saved'); resetItem(); await load();
+  });
+})();
+</script>
+</body>
+</html>

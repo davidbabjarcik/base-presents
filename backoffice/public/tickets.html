@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tickets · BASE Hub</title>
+<link rel="icon" href="/assets/favicon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/hub.css">
+<script src="/hub.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <span class="label" id="when">Ticket sales</span>
+  <h1 id="event">Tickets</h1>
+  <div class="stats">
+    <div><b id="sold">0</b><span class="label">Tickets sold</span></div>
+    <div><b id="left">0</b><span class="label">Left</span></div>
+    <div><b id="rev">0</b><span class="label">Revenue</span></div>
+    <div><b id="in">0</b><span class="label">Checked in</span></div>
+  </div>
+  <div class="row" style="margin-bottom:12px">
+    <span class="label" id="mode">Last 200 orders · refreshes every 10 s</span>
+    <span style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn ghost small" href="/buy" target="_blank" rel="noopener"><span>Open shop ↗</span></a>
+      <a class="btn small" href="/scan"><span>Scanner →</span></a>
+    </span>
+  </div>
+  <div class="scroll"><table>
+    <thead><tr><th>Time</th><th>Name</th><th>Email</th><th class="num">Qty</th><th class="num">Amount</th><th>Status</th><th>Tickets</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table></div>
+</main>
+<script>
+(async () => {
+  const { h, api, eur } = Hub;
+  await Hub.start('tickets');
+  async function load() {
+    const d = await api('/api/tickets/summary');
+    Hub.$('#event').textContent = d.event.name;
+    Hub.$('#when').textContent = d.event.date + ' · ' + d.event.venue + ' · capacity ' + d.event.capacity;
+    Hub.$('#mode').textContent = (d.mode === 'demo' ? 'Demo payments' : 'Stripe test mode') + ' · last 200 orders · refreshes every 10 s';
+    Hub.$('#sold').textContent = d.sold; Hub.$('#left').textContent = d.remaining;
+    Hub.$('#rev').textContent = eur(d.revenueCents); Hub.$('#in').textContent = d.checkedIn;
+    Hub.$('#rows').replaceChildren(...(d.orders.length ? d.orders.map((o) => h('tr', {},
+      h('td', {}, Hub.when(o.created_at)), h('td', {}, o.name), h('td', {}, o.email),
+      h('td', { class: 'num' }, o.qty), h('td', { class: 'num' }, eur(o.amount_cents)),
+      h('td', {}, h('span', { class: 'chip' + (o.status === 'paid' ? ' solid' : '') }, o.status)),
+      h('td', {}, o.link ? h('a', { href: o.link }, 'Open') : '—')))
+      : [h('tr', {}, h('td', { colspan: '7', class: 'muted' }, 'No orders yet.'))]));
+  }
+  await load();
+  setInterval(() => Hub.run(load), 10000);
+})();
+</script>
+</body>
+</html>

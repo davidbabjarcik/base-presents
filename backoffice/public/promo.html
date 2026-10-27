@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Promo · BASE Hub</title>
+<link rel="icon" href="/assets/favicon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/hub.css">
+<script src="/hub.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <span class="label">What we post, where and when</span>
+  <h1>Promo calendar</h1>
+
+  <details class="box" id="form-box">
+    <summary id="form-title">Plan a post</summary>
+    <form id="form" class="form-row">
+      <input type="hidden" name="id">
+      <label><span class="label">Date</span><input type="date" name="date" required></label>
+      <label><span class="label">Time</span><input type="time" name="time"></label>
+      <label><span class="label">Channel</span><select name="channel" id="channels"></select></label>
+      <label style="grid-column:span 2"><span class="label">What</span><input name="title" required maxlength="120" placeholder="e.g. Line-up reveal #1"></label>
+      <label><span class="label">Event</span><select name="event_id" id="events"><option value="">—</option></select></label>
+      <label><span class="label">Who does it</span><input name="owner" maxlength="60"></label>
+      <label><span class="label">Status</span>
+        <select name="status"><option value="planned">Planned</option><option value="ready">Ready</option><option value="posted">Posted</option></select></label>
+      <label style="grid-column:1/-1"><span class="label">Note / caption</span><textarea name="note" maxlength="1000"></textarea></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn small" type="submit"><span>Save</span></button>
+        <button class="btn ghost small" type="button" id="cancel"><span>Cancel</span></button>
+        <button class="btn ghost small" type="button" id="delete" hidden><span>Delete</span></button>
+      </div>
+    </form>
+  </details>
+
+  <div class="cal-head">
+    <button class="icon-btn" id="prev" type="button" aria-label="Previous month">←</button>
+    <h2 id="month">…</h2>
+    <button class="icon-btn" id="today" type="button" style="padding:0 12px">Today</button>
+    <button class="icon-btn" id="next" type="button" aria-label="Next month">→</button>
+  </div>
+  <p class="muted" style="margin:0 0 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <span class="chip">Planned</span><span class="chip solid">Ready</span><span class="chip" style="text-decoration:line-through;color:#666">Posted</span>
+    <span>· events are marked with a white line · click a post to edit</span>
+  </p>
+  <div class="cal-wrap"><div class="cal" id="cal"></div></div>
+  <div class="cal-list-mobile" id="list"></div>
+</main>
+<script>
+(async () => {
+  const { h, api, date } = Hub;
+  await Hub.start('promo');
+  const events = await api('/api/events');
+  Hub.$('#events').append(...events.map((e) => h('option', { value: e.id }, e.name)));
+  let month = Hub.today().slice(0, 7);
+  let data;
+
+  const f = Hub.$('#form');
+  function openForm(p) {
+    f.reset();
+    f.id.value = p?.id || '';
+    f.date.value = p?.date || Hub.today();
+    if (p) {
+      f.time.value = p.time || ''; f.channel.value = p.channel; f.title.value = p.title;
+      f.event_id.value = p.event_id || ''; f.owner.value = p.owner || ''; f.status.value = p.status; f.note.value = p.note || '';
+    }
+    Hub.$('#form-title').textContent = p?.id ? 'Edit: ' + p.title : 'Plan a post';
+    Hub.$('#delete').hidden = !p?.id;
+    Hub.$('#form-box').open = true;
+    Hub.$('#form-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  Hub.$('#cancel').onclick = () => { f.reset(); f.id.value = ''; Hub.$('#form-title').textContent = 'Plan a post'; Hub.$('#delete').hidden = true; Hub.$('#form-box').open = false; };
+  Hub.$('#delete').onclick = () => Hub.run(async () => {
+    if (!confirm('Delete this post?')) return;
+    await api('/api/promo/' + f.id.value, { method: 'DELETE' }); Hub.$('#cancel').click(); await load();
+  });
+  f.onsubmit = (e) => Hub.run(async () => {
+    e.preventDefault();
+    const body = Hub.formData(f);
+    if (body.id) await api('/api/promo/' + body.id, { method: 'PUT', body });
+    else await api('/api/promo', { body });
+    Hub.toast('Saved'); month = body.date.slice(0, 7); Hub.$('#cancel').click(); await load();
+  });
+
+  function render() {
+    const [y, m] = month.split('-').map(Number);
+    Hub.$('#month').textContent = new Date(y, m - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    const first = new Date(y, m - 1, 1);
+    const offset = (first.getDay() + 6) % 7; // Monday first
+    const start = new Date(y, m - 1, 1 - offset);
+    const today = Hub.today();
+    const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const cells = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => h('div', { class: 'dow' }, d));
+    const weeks = Math.ceil((offset + new Date(y, m, 0).getDate()) / 7);
+    for (let i = 0; i < weeks * 7; i++) {
+      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      const ds = iso(d);
+      const inMonth = d.getMonth() === m - 1;
+      cells.push(h('div', { class: (inMonth ? '' : 'out ') + (ds === today ? 'today' : '') },
+        h('span', { class: 'day-n' }, d.getDate()),
+        events.filter((e) => e.date === ds).map((e) => h('span', { class: 'ev' }, e.name)),
+        data.items.filter((p) => p.date === ds).map((p) => h('button', {
+          class: 'p ' + p.status, type: 'button', title: `${p.time || ''} ${p.channel}: ${p.title}`, onclick: () => openForm(p)
+        }, (p.time ? p.time + ' ' : '') + p.channel + ' · ' + p.title))));
+    }
+    Hub.$('#cal').replaceChildren(...cells);
+
+    // Phone: simple list
+    const items = data.items;
+    Hub.$('#list').replaceChildren(...(items.length ? items.map((p) => h('button', {
+      class: 'panel', type: 'button', style: 'width:100%;text-align:left;background:#000;color:#fff;margin-bottom:8px;cursor:pointer;font:inherit', onclick: () => openForm(p)
+    },
+      h('span', { class: 'label' }, `${date(p.date)} ${p.time || ''} · ${p.channel}`),
+      h('b', {}, p.title),
+      h('span', { class: 'chip' + (p.status === 'ready' ? ' solid' : '') }, p.status)))
+      : [h('p', { class: 'muted' }, 'Nothing planned this month.')]));
+  }
+
+  async function load() {
+    data = await api('/api/promo?month=' + month);
+    if (!Hub.$('#channels').options.length) Hub.$('#channels').append(...data.channels.map((c) => h('option', { value: c }, c)));
+    render();
+  }
+  const shift = (k) => { const [y, m] = month.split('-').map(Number); const d = new Date(y, m - 1 + k, 1); month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; Hub.run(load); };
+  Hub.$('#prev').onclick = () => shift(-1);
+  Hub.$('#next').onclick = () => shift(1);
+  Hub.$('#today').onclick = () => { month = Hub.today().slice(0, 7); Hub.run(load); };
+  await load();
+})();
+</script>
+</body>
+</html>

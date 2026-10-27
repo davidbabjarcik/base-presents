@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Users · BASE Hub</title>
+<link rel="icon" href="/assets/favicon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/hub.css">
+<script src="/hub.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <span class="label">Admin</span>
+  <h1>Users &amp; data</h1>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Name</th><th>Email (login)</th><th>Role</th><th>New password</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table></div>
+  <p class="muted" style="font-size:13px">Admin = everything · Ticket sales = tickets, scanner, promo, ideas · Team = stock, promo, stats, ideas</p>
+
+  <details class="box" style="margin-top:24px">
+    <summary>Add a person</summary>
+    <form id="add" class="form-row">
+      <label><span class="label">Name</span><input name="name" required maxlength="60"></label>
+      <label><span class="label">Email (login)</span><input name="email" type="email" required maxlength="120"></label>
+      <label><span class="label">Password</span><input name="password" required minlength="5" autocomplete="new-password"></label>
+      <label><span class="label">Role</span><select name="role" id="roles"></select></label>
+      <button class="btn small" type="submit"><span>Add</span></button>
+    </form>
+  </details>
+
+  <div class="section-title"><h2>Demo data</h2></div>
+  <section class="panel" id="demo"></section>
+</main>
+<script>
+(async () => {
+  const { h, api } = Hub;
+  const me = await Hub.start('users');
+  let roles = {};
+
+  async function load() {
+    const d = await api('/api/users');
+    roles = d.roles;
+    if (!Hub.$('#roles').options.length) Hub.$('#roles').append(...Object.entries(roles).map(([k, v]) => h('option', { value: k, selected: k === 'team' }, v)));
+    Hub.$('#rows').replaceChildren(...d.users.map((u) => h('tr', {},
+      h('td', {}, u.name, u.id === me.id ? h('span', { class: 'chip', style: 'margin-left:6px' }, 'you') : null),
+      h('td', {}, u.email),
+      h('td', {}, h('select', { style: 'min-height:40px;width:auto', 'aria-label': 'Role of ' + u.name, onchange: (e) => Hub.run(async () => {
+        await api('/api/users/' + u.id, { method: 'PUT', body: { role: e.target.value } }); Hub.toast('Role changed'); await load();
+      }) }, Object.entries(roles).map(([k, v]) => h('option', { value: k, selected: k === u.role }, v)))),
+      h('td', {}, h('form', { style: 'display:flex;gap:6px', onsubmit: (e) => Hub.run(async () => {
+        e.preventDefault();
+        await api('/api/users/' + u.id, { method: 'PUT', body: { password: e.target.password.value } });
+        e.target.reset(); Hub.toast('Password changed for ' + u.name);
+      }) }, h('input', { name: 'password', minlength: '5', required: true, autocomplete: 'new-password', style: 'min-height:40px;width:150px', 'aria-label': 'New password for ' + u.name }),
+        h('button', { class: 'icon-btn', type: 'submit', 'aria-label': 'Save password' }, '✓'))),
+      h('td', { class: 'num' }, u.id === me.id ? '' : h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Delete ' + u.name, onclick: () => Hub.run(async () => {
+        if (!confirm(`Delete ${u.name}'s account?`)) return; await api('/api/users/' + u.id, { method: 'DELETE' }); await load();
+      }) }, '×')))));
+    const demo = (await api('/api/demo')).demo;
+    Hub.$('#demo').replaceChildren(
+      h('p', { class: 'muted', style: 'margin:0' }, demo
+        ? 'Demo data is loaded: sample guest numbers and bar sales, starter stock, promo posts around Chodbovica 5 and one idea. Real event dates stay.'
+        : 'No demo data. Everything you see is real.'),
+      demo
+        ? h('button', { class: 'btn ghost small', type: 'button', style: 'align-self:flex-start', onclick: () => Hub.run(async () => {
+          if (!confirm('Remove all demo data? Your own entries stay.')) return;
+          await api('/api/demo/remove', { method: 'POST' }); Hub.toast('Demo data removed'); await load();
+        }) }, h('span', {}, 'Remove demo data'))
+        : h('button', { class: 'btn ghost small', type: 'button', style: 'align-self:flex-start', onclick: () => Hub.run(async () => {
+          await api('/api/demo/load', { method: 'POST' }); Hub.toast('Demo data loaded'); await load();
+        }) }, h('span', {}, 'Load demo data')));
+  }
+
+  Hub.$('#add').onsubmit = (e) => Hub.run(async () => {
+    e.preventDefault();
+    await api('/api/users', { body: Hub.formData(e.target) });
+    e.target.reset(); Hub.toast('Account created'); await load();
+  });
+  await load();
+})();
+</script>
+</body>
+</html>

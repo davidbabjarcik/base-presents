@@ -7,13 +7,11 @@
 <link rel="icon" href="/assets/favicon-32.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/hub.css">
+<script src="/hub.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
-<header class="top">
-  <a href="/buy"><img src="/assets/base-logo-white.png" alt="Base Presents"></a>
-  <button class="badge" id="logout" type="button" style="background:none;cursor:pointer;min-height:36px">Log out</button>
-</header>
 <main class="wrap" style="display:flex;flex-direction:column;gap:20px;max-width:520px">
   <h1 style="margin:0">Scanner</h1>
 
@@ -63,8 +61,7 @@
   }
 
   const toLogin = () => location.replace('/login?next=/scan');
-  fetch('/api/me').then((r) => { if (!r.ok) toLogin(); });
-  $('logout').onclick = async () => { await fetch('/api/logout', { method: 'POST' }); toLogin(); };
+  Hub.start('tickets');
 
   $('manual').onsubmit = (e) => { e.preventDefault(); const c = $('code').value.trim(); if (c) check(c); $('code').value = ''; };
 
