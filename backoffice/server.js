@@ -20,6 +20,10 @@ dotenv.config({ path: path.join(__dirname, '.env'), quiet: true });
 // ---- Config (.env) ----
 const PORT = Number(process.env.PORT || 4242);
 const BASE_URL = (process.env.BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
+// The public website (index.html). Its ticket form calls /api/event and /api/checkout here.
+const SITE_URL = (process.env.SITE_URL || 'http://localhost:8765').replace(/\/$/, '');
+// 'null' = index.html opened straight from disk (file://). Remove it when the site is online.
+const SITE_ORIGINS = (process.env.SITE_ORIGINS || `${SITE_URL},null`).split(',').map((s) => s.trim()).filter(Boolean);
 const EVENT = {
   name: process.env.EVENT_NAME || 'Chodbovica 5',
   date: process.env.EVENT_DATE || '16.11.2026 · 21:07',
@@ -61,15 +65,25 @@ const app = express();
 app.disable('x-powered-by');
 
 const registerTicketJson = registerTickets(app, {
-  db, auth, stripe, mode: MODE, event: EVENT, baseUrl: BASE_URL, webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || ''
+  db, auth, stripe, mode: MODE, event: EVENT, baseUrl: BASE_URL, siteUrl: SITE_URL, webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || ''
 }); // registers the raw-body Stripe webhook first
 
 app.use(express.json({ limit: '20kb' }));
 app.use(express.urlencoded({ extended: false, limit: '20kb' }));
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
+
+// Let the public website sell tickets: CORS only for the two shop endpoints and only for the site's origin
+app.use(['/api/event', '/api/checkout'], (req, res, next) => {
+  const origin = req.get('origin');
+  if (origin && SITE_ORIGINS.includes(origin)) {
+    res.set({ 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'GET, POST', Vary: 'Origin' });
+  }
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
 app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
 
-app.get('/', (req, res) => res.redirect('/buy'));
+app.get('/', (req, res) => res.redirect(SITE_URL + '/#tickets'));
 
 // Login
 app.post('/api/login', auth.login);

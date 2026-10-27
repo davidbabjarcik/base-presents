@@ -16,7 +16,8 @@ const normCode = (c) => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '').
 
 const HOLD_MINUTES = 30; // Stripe Checkout sessions live at least 30 min; seats are held that long
 
-export function registerTickets(app, { db, auth, stripe, mode, event, baseUrl, webhookSecret }) {
+export function registerTickets(app, { db, auth, stripe, mode, event, baseUrl, siteUrl, webhookSecret }) {
+  const canceledUrl = `${siteUrl}/?tickets=canceled#tickets`;
   const shell = (title, body) => page(title, body, mode);
 
   // Seats taken = paid tickets + pending orders still inside their hold window
@@ -100,7 +101,7 @@ export function registerTickets(app, { db, auth, stripe, mode, event, baseUrl, w
           metadata: { order_id: order.id },
           expires_at: Math.floor(now() / 1000) + HOLD_MINUTES * 60,
           success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${baseUrl}/buy?canceled=1`
+          cancel_url: canceledUrl
         });
         db.prepare('UPDATE orders SET stripe_session_id = ? WHERE id = ?').run(session.id, order.id);
         res.json({ url: session.url });
@@ -144,7 +145,7 @@ export function registerTickets(app, { db, auth, stripe, mode, event, baseUrl, w
           <form method="post" action="/demo-checkout/${order.id}/pay?t=${order.access_token}">
             <button class="btn" type="submit"><span>Pay ${eur(order.amount_cents)} (simulated)</span><span>→</span></button>
           </form>
-          <a class="link" href="/buy?canceled=1">Cancel</a>
+          <a class="link" href="${canceledUrl}">Cancel</a>
         </div>`));
     });
     app.post('/demo-checkout/:id/pay', (req, res) => {
@@ -174,7 +175,8 @@ export function registerTickets(app, { db, auth, stripe, mode, event, baseUrl, w
         <p class="lead">Thanks, ${esc(order.name)}! Show the QR code at the door.</p>
         <p class="muted">Order ${order.id} · ${eur(order.amount_cents)} · ${order.mode === 'demo' ? 'demo payment' : 'Stripe test payment'}.
           In the real version this page is also sent to <b>${esc(order.email)}</b>.</p>
-        <div class="tickets">${cards.join('')}</div>`));
+        <div class="tickets">${cards.join('')}</div>
+        <p style="margin-top:32px"><a class="link" href="${siteUrl}">← Back to Base Presents</a></p>`));
     });
 
     // Door check-in (ticket staff)

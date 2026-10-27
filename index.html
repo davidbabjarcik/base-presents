@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Base Presents</title>
-<meta name="description" content="Base Presents from Košice: home of Chodbovica and Chillout, student parties since 2021. Tickets via Tootoot.">
+<meta name="description" content="Base Presents from Košice: home of Chodbovica and Chillout, student parties since 2021. Buy tickets right on the site.">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="favicon.ico" sizes="48x48">
 <link rel="icon" type="image/png" href="assets/favicon-32.png" sizes="32x32">
@@ -14,7 +14,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Base Presents">
 <meta property="og:title" content="Base Presents">
-<meta property="og:description" content="Home of Chodbovica and Chillout. Student parties in Košice since 2021. Tickets via Tootoot.">
+<meta property="og:description" content="Home of Chodbovica and Chillout. Student parties in Košice since 2021. Buy tickets right on the site.">
 <meta property="og:url" content="https://basepresents.sk/">
 <meta property="og:image" content="https://basepresents.sk/assets/og-image.png">
 <meta property="og:image:width" content="1200">
@@ -68,6 +68,9 @@ article[aria-label^="Chillout 10"]:hover [aria-hidden="true"]{color:#000 !import
 .bp-archive figcaption{position:absolute;left:0;right:0;bottom:0;padding:48px 16px 14px;background:linear-gradient(transparent,rgba(0,0,0,.75));font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#fff}
 @media (max-width:720px){.bp-archive figcaption{font-size:10px;padding:32px 10px 10px;letter-spacing:.1em}}
 .bp-track:hover{animation-play-state:paused}
+#bp-buy input:focus,#bp-buy button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#bp-buy button:disabled{opacity:.35;cursor:not-allowed}
+#bp-buy #bp-minus:hover:not(:disabled),#bp-buy #bp-plus:hover:not(:disabled){background:#141414}
 @media (prefers-reduced-motion: reduce){
   .bp-track,.bp-dot,.bp-flip{animation:none}
   html{scroll-behavior:auto}
@@ -92,6 +95,7 @@ article[aria-label^="Chillout 10"]:hover [aria-hidden="true"]{color:#000 !import
 <a href="#about" style="padding: 12px 0">About</a>
 <a href="#archive" style="padding: 12px 0">Archive</a>
 <a href="#contact" style="padding: 12px 0">Contact</a>
+<a href="http://localhost:4242/login" data-hub="/login" style="padding: 12px 0">Login</a>
 <a href="#tickets" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; background: #FFFFFF; color: #000000; font-weight: 600">Tickets</a>
 </div>
 </nav>
@@ -144,7 +148,7 @@ article[aria-label^="Chillout 10"]:hover [aria-hidden="true"]{color:#000 !import
 </div>
 </div>
 <a href="#tickets" style="display: flex; align-items: center; justify-content: space-between; min-height: 56px; padding: 0 20px; background: #FFFFFF; color: #000000; font-weight: 600; font-size: 16px"><span>Tickets</span><span>→</span></a>
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A3A3A3">Sold via Tootoot</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A3A3A3">Sold right here · QR ticket by email</div>
 </article>
 </div>
 </section>
@@ -241,7 +245,7 @@ article[aria-label^="Chillout 10"]:hover [aria-hidden="true"]{color:#000 !import
 <div style="flex: 1 1 320px; max-width: 440px; display: flex; flex-direction: column; gap: 24px">
 <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #A3A3A3">Chodbovica 5</span>
 <h2 style="margin: 0; font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: clamp(44px, 6.5vw, 92px); line-height: 0.95; letter-spacing: -0.02em; text-transform: uppercase">Tickets</h2>
-<p style="margin: 0; font-size: 18px; line-height: 1.55; color: #D4D4D4">Buy them right here without leaving the site. Sales run through Tootoot: your ticket arrives by email and also lives in the Tootoot app.</p>
+<p style="margin: 0; font-size: 18px; line-height: 1.55; color: #D4D4D4">Buy them right here. Pay by card and your ticket with a QR code arrives by email straight away.</p>
 <div style="display: flex; flex-direction: column; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #A3A3A3">
 <span>01 — Pick your tickets</span>
 <span>02 — Pay by card</span>
@@ -249,12 +253,37 @@ article[aria-label^="Chillout 10"]:hover [aria-hidden="true"]{color:#000 !import
 </div>
 </div>
 <div style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
-<!-- Tootoot ticket widget (Chodbovica 5). For a new edition, paste the new embed code from the event admin on tootoot.fm. -->
-<div style="min-height: 460px">
-<iframe id="toot-ifr1a16027efa3" title="Tootoot tickets for Chodbovica 5" width="100%" scrolling="no" frameborder="0" allowtransparency="true" src="https://tootoot.fm/buy-embedded/?event-id=6abe3202504189a5a5f654fd&amp;ifr-id=toot-ifr1a16027efa3&amp;lang=sk&amp;theme=dark,transparent&amp;info-head=true"></iframe>
-<script>!function(e,t,o,r,n){var a,i=t.getElementsByTagName(o)[0],s="TootootIframesAsyncLoad";if(e[s]||(e[s]=[]),t.getElementById(r)){var c=e.TootootIframes;c?c.register(n):e[s].push(n)}else e[s].push(n),(a=t.createElement(o)).id=r,a.src="https://tootoot.fm/buy-embedded/host.v2.js",i.parentNode.insertBefore(a,i)}(window,document,"script","tootoot-iframe-channel","toot-ifr1a16027efa3");</script>
+<!-- Our own ticketing: talks to BASE Hub (backoffice/). The address is TICKETS_API in the script at the bottom. -->
+<form id="bp-buy" novalidate style="border: 1px solid #FFFFFF; padding: clamp(20px, 3vw, 32px); display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #A3A3A3">
+<span id="bp-buy-event">Chodbovica 5 · 16.11.2026 · 21:07</span>
+<span id="bp-buy-left"><span class="bp-dot"></span>On sale now</span>
 </div>
-<a href="https://tootoot.fm/sk/events/6abe3202504189a5a5f654fd" target="_blank" rel="noopener" style="align-self: flex-start; font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #A3A3A3; padding: 12px 0; border-bottom: 1px solid #333333">Widget not loading? Open on Tootoot ↗</a>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span id="bp-buy-name" style="font-size: 20px; font-weight: 600">Presale</span>
+<span id="bp-buy-price" style="font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: 40px; line-height: 1">–</span>
+</div>
+<div role="group" aria-label="Number of tickets" style="display: flex; align-items: center; border: 1px solid #FFFFFF">
+<button type="button" id="bp-minus" aria-label="One ticket less" style="width: 56px; height: 56px; border: 0; background: #000000; color: #FFFFFF; font-size: 24px; cursor: pointer">−</button>
+<output id="bp-qty" aria-live="polite" style="min-width: 48px; text-align: center; font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: 24px">1</output>
+<button type="button" id="bp-plus" aria-label="One ticket more" style="width: 56px; height: 56px; border: 0; background: #000000; color: #FFFFFF; font-size: 24px; cursor: pointer">+</button>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+<label style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 8px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #A3A3A3">Full name</span>
+<input id="bp-name" autocomplete="name" required style="min-height: 56px; padding: 0 16px; border: 1px solid #FFFFFF; background: #000000; color: #FFFFFF; font-size: 16px; font-family: Inter, system-ui, sans-serif; box-sizing: border-box; width: 100%"></label>
+<label style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 8px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #A3A3A3">Email (your tickets go here)</span>
+<input id="bp-email" type="email" autocomplete="email" required style="min-height: 56px; padding: 0 16px; border: 1px solid #FFFFFF; background: #000000; color: #FFFFFF; font-size: 16px; font-family: Inter, system-ui, sans-serif; box-sizing: border-box; width: 100%"></label>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-top: 16px; border-top: 1px solid #333333">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #A3A3A3">Total</span>
+<span id="bp-total" style="font-family: Montserrat, Inter, sans-serif; font-weight: 700; font-size: 32px">–</span>
+</div>
+<p id="bp-msg" role="status" style="margin: 0; min-height: 22px; font-size: 15px; color: #D4D4D4"></p>
+<button type="submit" id="bp-pay" style="display: flex; align-items: center; justify-content: space-between; min-height: 56px; padding: 0 20px; border: 0; background: #FFFFFF; color: #000000; font-weight: 600; font-size: 16px; font-family: Inter, system-ui, sans-serif; cursor: pointer"><span>Continue to payment</span><span>→</span></button>
+<span id="bp-mode" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A3A3A3">Secure card payment · max 6 tickets per order</span>
+</form>
 </div>
 </div>
 </section>
@@ -337,7 +366,7 @@ article[aria-label^="Chillout 10"]:hover [aria-hidden="true"]{color:#000 !import
 <img src="assets/base-logo-white.png" alt="" aria-hidden="true" style="width: 100%; height: auto; aspect-ratio: 1955 / 622; display: block">
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding-top: 24px; border-top: 1px solid #262626; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A3A3A3">
 <span>© 2026 Base Presents</span>
-<span>Tickets via Tootoot</span>
+<a href="http://localhost:4242/login" data-hub="/login" style="padding: 4px 0">Team login →</a>
 <a href="#top" style="padding: 4px 0">Back to top ↑</a>
 </div>
 </div>
@@ -371,6 +400,77 @@ article[aria-label^="Chillout 10"]:hover [aria-hidden="true"]{color:#000 !import
     }
     tick();
     setInterval(tick, 1000);
+  })();
+
+  // ---- Ticket shop (our own ticketing, served by BASE Hub in backoffice/) ----
+  // Change TICKETS_API to the BASE Hub address when it runs on a real server.
+  const TICKETS_API = 'http://localhost:4242';
+
+  (function () {
+    document.querySelectorAll('[data-hub]').forEach((a) => { a.href = TICKETS_API + a.dataset.hub; });
+    const form = document.getElementById('bp-buy');
+    if (!form) return;
+    const $ = (id) => document.getElementById(id);
+    const eur = (c) => (c / 100).toFixed(2).replace('.', ',') + ' €';
+    const msg = (text) => { $('bp-msg').textContent = text; };
+    let ev = null, qty = 1;
+
+    function render() {
+      $('bp-qty').textContent = qty;
+      $('bp-total').textContent = ev ? eur(ev.priceCents * qty) : '–';
+      $('bp-minus').disabled = qty <= 1;
+      $('bp-plus').disabled = !ev || qty >= Math.min(ev.maxPerOrder, ev.remaining);
+    }
+
+    fetch(TICKETS_API + '/api/event')
+      .then((r) => r.json())
+      .then((data) => {
+        ev = data;
+        $('bp-buy-event').textContent = ev.name + ' · ' + ev.date;
+        $('bp-buy-name').textContent = ev.ticketName;
+        $('bp-buy-price').textContent = eur(ev.priceCents);
+        $('bp-mode').textContent = (ev.mode === 'demo' ? 'Test mode: payment is simulated · ' : 'Secure card payment by Stripe · ')
+          + 'max ' + ev.maxPerOrder + ' tickets per order';
+        if (ev.remaining <= 0) {
+          $('bp-buy-left').textContent = 'Sold out';
+          $('bp-pay').disabled = true;
+        } else if (ev.remaining < 100) {
+          $('bp-buy-left').textContent = 'Only ' + ev.remaining + ' left';
+        }
+        render();
+      })
+      .catch(() => {
+        $('bp-pay').disabled = true;
+        msg('Ticket sales are offline right now. Try again in a moment.');
+      });
+
+    $('bp-minus').onclick = () => { qty = Math.max(1, qty - 1); render(); };
+    $('bp-plus').onclick = () => { qty += 1; render(); };
+
+    if (new URLSearchParams(location.search).get('tickets') === 'canceled') {
+      msg('Payment canceled. Nothing was charged.');
+      setTimeout(() => document.getElementById('tickets').scrollIntoView(), 300);
+    }
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      msg('');
+      $('bp-pay').disabled = true;
+      try {
+        const r = await fetch(TICKETS_API + '/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: $('bp-name').value, email: $('bp-email').value, qty })
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || 'Something went wrong.');
+        location.href = new URL(data.url, TICKETS_API).href; // Stripe Checkout or the demo payment page
+      } catch (err) {
+        msg(err.message === 'Failed to fetch' ? 'Ticket sales are offline right now. Try again in a moment.' : err.message);
+        $('bp-pay').disabled = false;
+      }
+    };
+    render();
   })();
 
   // ---- Animations ----

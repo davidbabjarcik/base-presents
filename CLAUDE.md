@@ -18,7 +18,7 @@ or demo payment, QR tickets, `/scan` door scanner), stock alko/nealko, promo cal
 (pros/cons, votes), users. Roles admin / tickets / team (`ACCESS` in `backoffice/auth.js`).
 Accounts are seeded from `backoffice/.env` on first start (not committed); logins are listed in `README.md` and
 `backoffice/README.md`. Data lives in `backoffice/data/base.db` (not committed). Demo rows have `demo = 1`.
-Internal UI copy is English. Full docs (Slovak): `backoffice/README.md`. Not linked from the public site yet.
+Internal UI copy is English. Full docs (Slovak): `backoffice/README.md`. The public site sells tickets through it and links to its login.
 
 ## Design rules
 - Strictly black and white: `#000000`, `#FFFFFF`
@@ -36,12 +36,15 @@ Two series — do NOT describe Base Presents as "3 events a year":
   (house music at sunset, chill zones, afterparty at night; 500+ guests). Editions 1–9 past, **edition 10: May 2027** (maybe named "Chillout X").
 - Partners so far: Red Bull, Stock, Jägermeister, Šariš, Promotime, Accenture.
 
-## Tickets (Tootoot)
-Tickets are sold via Tootoot (tootoot.fm). The `#tickets` section contains the Tootoot iframe embed
-(iframe + `host.v2.js` loader script) and below it a fallback link "Open on Tootoot"
-(`https://tootoot.fm/sk/events/<event-id>`). For a new edition, paste the new embed code from the event's
-admin on tootoot.fm and update the event id in the fallback link.
-**Currently a TEST embed** (event `6abe3202504189a5a5f654fd` = H3O Organ Trio, not Chodbovica 5) — replace it.
+## Tickets (own ticketing via BASE Hub — NOT Tootoot)
+Tickets are sold by our own system, not Tootoot. The `#tickets` section has a native form (`#bp-buy`) styled like the site.
+It calls BASE Hub (`backoffice/`): `GET /api/event` (name, price, tickets left) and `POST /api/checkout`, then redirects to
+the payment (Stripe Checkout in test mode, or the demo payment page) and the QR tickets page. Canceling returns to
+`/?tickets=canceled#tickets`. The BASE Hub address is `TICKETS_API` in the script at the bottom of `index.html`
+(now `http://localhost:4242`); BASE Hub must be running or the form says sales are offline.
+BASE Hub allows these calls only from `SITE_URL` / `SITE_ORIGINS` in `backoffice/.env` (CORS; `null` = file://).
+Event name, date, price and capacity are set in `backoffice/.env` (`EVENT_*`, `TICKET_*`).
+Team login: "Login" in the nav and "Team login →" in the footer link to `TICKETS_API/login` (`data-hub` links).
 
 ## Countdown
 `EVENT_DATE` near the bottom of `index.html` (local time). Now `2026-11-16T21:07` (Chodbovica 5).

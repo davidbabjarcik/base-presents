@@ -15,7 +15,7 @@ Interná aplikácia pre tím Base Presents. **Prototyp**: beží u teba na poč�
 | Štatistiky | `/stats` | porovnanie eventov: počet ľudí, počet barov, tržby barov, € na hosťa, najlepší bar a produkt |
 | Nápady | `/ideas` | nápady na nové eventy: prečo, plusy a mínusy, hlasovanie, stav |
 | Účty | `/users` | len admin: ľudia, roly, heslá, demo dáta |
-| E-shop (verejný) | http://localhost:4242/buy | kúpa lístkov pre návštevníkov |
+| Nákup lístkov | sekcia **Tickets** na webe (http://localhost:8765/#tickets) | formulár na webe predáva cez BASE Hub. Záložná samostatná stránka: http://localhost:4242/buy |
 
 ---
 
@@ -63,6 +63,8 @@ Súbor `.env` **sa nedáva na GitHub** (je v `.gitignore`). Vzor so všetkými m
 | `TICKET_NAME`, `TICKET_PRICE_CENTS` | názov a cena lístka v centoch (`1000` = 10 €) |
 | `EVENT_CAPACITY`, `MAX_PER_ORDER` | kapacita (1400) a max. lístkov na objednávku (6) |
 | `PORT`, `BASE_URL` | port (4242) a adresa servera |
+| `SITE_URL` | adresa verejného webu (http://localhost:8765). Len odtiaľ môže web predávať lístky a sem sa vráti zákazník, keď platbu zruší. |
+| `SITE_ORIGINS` | voliteľné: ďalšie adresy webu oddelené čiarkou. `null` = `index.html` otvorený priamo zo súboru. |
 
 ### Dáta
 
@@ -76,7 +78,7 @@ Všetko je v jednom súbore **`backoffice/data/base.db`** (SQLite). Tiež nejde 
 ## Sekcie podrobne
 
 ### Lístky a skener
-1. Návštevník na `/buy` vyberie počet lístkov, vyplní meno a e-mail.
+1. Návštevník na **webe v sekcii Tickets** (alebo na záložnej stránke `/buy`) vyberie počet lístkov, vyplní meno a e-mail. Web si od BASE Hubu načíta názov eventu, cenu a koľko lístkov zostáva.
 2. Server **podrží miesta na 30 minút** (nepredá viac, ako je kapacita).
 3. Platba: bez Stripe kľúča sa ukáže **simulovaná platba**. So Stripe kľúčom sa ukáže skutočná platobná stránka Stripe v test móde (testovacia karta `4242 4242 4242 4242`, ľubovoľný budúci dátum, ľubovoľné CVC).
 4. Po zaplatení dostane stránku s lístkami. Každý lístok má **QR kód** a kód `XXXX-XXXX-XXXX`. E-mail sa zatiaľ neposiela, odkaz sa len vypíše do konzoly servera.
