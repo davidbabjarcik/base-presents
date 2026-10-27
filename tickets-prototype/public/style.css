@@ -1,0 +1,47 @@
+:root{--bg:#000;--fg:#fff;--muted:#A3A3A3;--line:#333;--ok:#fff}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,sans-serif}
+a{color:inherit}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px clamp(16px,4vw,32px);border-bottom:1px solid #262626}
+.top img{display:block;height:22px;width:auto}
+.badge{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;border:1px dashed var(--muted);color:var(--muted);padding:6px 10px}
+.wrap{max-width:960px;margin:0 auto;padding:clamp(32px,6vw,64px) clamp(16px,4vw,32px) 80px}
+h1{margin:0 0 24px;font-family:Montserrat,Inter,sans-serif;font-weight:700;font-size:clamp(36px,6vw,64px);line-height:.95;letter-spacing:-.02em;text-transform:uppercase}
+h2{margin:0;font-family:Montserrat,Inter,sans-serif;font-weight:700;font-size:28px;line-height:1.05;text-transform:uppercase}
+.label{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted);font-size:15px;line-height:1.55}
+.lead{font-size:20px;font-weight:500;margin:0 0 8px}
+code{font-family:'JetBrains Mono',monospace;font-size:.9em}
+.card{border:1px solid #fff;padding:28px;display:flex;flex-direction:column;gap:18px;max-width:520px}
+.total{font-family:Montserrat,Inter,sans-serif;font-weight:700;font-size:48px;line-height:1;margin:0}
+.btn{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:56px;padding:0 20px;border:0;background:#fff;color:#000;font:600 16px Inter,system-ui,sans-serif;cursor:pointer}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:transparent;color:#fff;border:1px solid #fff}
+.link{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:12px 0;align-self:flex-start}
+label{display:flex;flex-direction:column;gap:8px}
+input,select{min-height:52px;padding:0 16px;border:1px solid #fff;background:#000;color:#fff;font:16px Inter,system-ui,sans-serif;width:100%}
+input:focus,select:focus,.btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.qty{display:flex;align-items:center;border:1px solid #fff}
+.qty button{width:52px;height:52px;border:0;background:#000;color:#fff;font-size:22px;cursor:pointer}
+.qty output{min-width:48px;text-align:center;font-family:Montserrat,Inter,sans-serif;font-weight:700;font-size:22px}
+.msg{min-height:22px;font-size:15px}
+.msg.err{color:#fff;border-left:3px solid #fff;padding-left:10px}
+.tickets{display:flex;flex-wrap:wrap;gap:16px;margin-top:28px}
+.ticket{flex:1 1 280px;max-width:340px;background:#fff;color:#000;padding:22px;display:flex;flex-direction:column;gap:10px}
+.ticket .label,.ticket .muted{color:#5C5C5C}
+.ticket-head{display:flex;justify-content:space-between}
+.qr svg{display:block;width:100%;height:auto}
+.code{font-family:'JetBrains Mono',monospace;font-size:20px;letter-spacing:.1em;text-align:center;margin:0}
+.stats{display:flex;flex-wrap:wrap;gap:24px 48px;margin:8px 0 32px;padding:24px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.stats b{display:block;font-family:Montserrat,Inter,sans-serif;font-size:40px;line-height:1}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #262626;vertical-align:top}
+th{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:400}
+.scroll{overflow-x:auto}
+.result{padding:28px;text-align:center;border:2px solid #fff}
+.result.ok{background:#fff;color:#000}
+.result.bad{border-style:dashed}
+.result strong{display:block;font-family:Montserrat,Inter,sans-serif;font-size:40px;text-transform:uppercase;line-height:1;margin-bottom:8px}
+#reader{width:100%;max-width:420px;background:#141414;min-height:40px}
+.hidden{display:none !important}

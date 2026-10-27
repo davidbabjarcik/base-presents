@@ -7,3 +7,8 @@ gencisearch-otazky.md
 # OS junk
 Thumbs.db
 .DS_Store
+
+# Tickets prototype
+tickets-prototype/node_modules/
+tickets-prototype/.env
+tickets-prototype/data/

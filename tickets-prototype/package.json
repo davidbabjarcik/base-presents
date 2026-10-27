@@ -1,0 +1,19 @@
+{
+  "name": "base-presents-tickets-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Test prototype of own ticket sales for Base Presents (Stripe test mode)",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.9",
+    "express": "^4.22.3",
+    "qrcode": "^1.5.4",
+    "stripe": "^23.0.1"
+  }
+}

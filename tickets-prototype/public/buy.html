@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buy tickets · Base Presents</title>
+<link rel="icon" href="/assets/favicon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <a href="/buy"><img src="/assets/base-logo-white.png" alt="Base Presents"></a>
+  <span class="badge" id="mode">Test</span>
+</header>
+<main class="wrap">
+  <span class="label" id="when">…</span>
+  <h1 id="event">Tickets</h1>
+  <form class="card" id="form" novalidate>
+    <div class="row">
+      <div>
+        <span class="label" id="ticket-name">Presale</span>
+        <p class="total" id="price" style="font-size:32px;margin-top:6px">–</p>
+      </div>
+      <div class="qty" aria-label="Number of tickets">
+        <button type="button" id="minus" aria-label="One less">−</button>
+        <output id="qty" aria-live="polite">1</output>
+        <button type="button" id="plus" aria-label="One more">+</button>
+      </div>
+    </div>
+    <label><span class="label">Full name</span><input id="name" autocomplete="name" required></label>
+    <label><span class="label">Email (tickets are sent here)</span><input id="email" type="email" autocomplete="email" required></label>
+    <div class="row"><span class="label">Total</span><span class="total" id="total" style="font-size:40px">–</span></div>
+    <p class="msg" id="msg" role="status"></p>
+    <button class="btn" id="pay" type="submit"><span>Continue to payment</span><span>→</span></button>
+    <p class="muted" id="left" style="margin:0"></p>
+  </form>
+  <p class="muted" style="max-width:520px;margin-top:24px">Prototype for testing only. In Stripe test mode pay with card <code>4242 4242 4242 4242</code>, any future date and any CVC. No real money is charged.</p>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const eur = (c) => (c / 100).toFixed(2).replace('.', ',') + ' €';
+  let ev = null, qty = 1;
+
+  function render() {
+    $('qty').textContent = qty;
+    $('total').textContent = ev ? eur(ev.priceCents * qty) : '–';
+    $('minus').disabled = qty <= 1;
+    $('plus').disabled = !ev || qty >= Math.min(ev.maxPerOrder, ev.remaining);
+  }
+
+  async function load() {
+    ev = await fetch('/api/event').then((r) => r.json());
+    $('event').textContent = ev.name;
+    $('when').textContent = ev.date + ' · ' + ev.venue;
+    $('ticket-name').textContent = ev.ticketName;
+    $('price').textContent = eur(ev.priceCents);
+    $('mode').textContent = ev.mode === 'demo' ? 'Demo mode' : 'Stripe test mode';
+    $('left').textContent = ev.remaining > 0 ? ev.remaining + ' tickets left' : 'Sold out';
+    $('pay').disabled = ev.remaining <= 0;
+    render();
+  }
+
+  $('minus').onclick = () => { qty = Math.max(1, qty - 1); render(); };
+  $('plus').onclick = () => { qty += 1; render(); };
+
+  if (new URLSearchParams(location.search).has('canceled')) {
+    $('msg').textContent = 'Payment canceled. Nothing was charged.';
+  }
+
+  $('form').onsubmit = async (e) => {
+    e.preventDefault();
+    $('msg').className = 'msg';
+    $('msg').textContent = '';
+    $('pay').disabled = true;
+    try {
+      const r = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: $('name').value, email: $('email').value, qty })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Something went wrong');
+      location.href = data.url;
+    } catch (err) {
+      $('msg').className = 'msg err';
+      $('msg').textContent = err.message;
+      $('pay').disabled = false;
+    }
+  };
+
+  load();
+</script>
+</body>
+</html>

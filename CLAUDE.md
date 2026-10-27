@@ -12,6 +12,11 @@ The site copy is in English. The user (Dejvo) talks in Slovak — reply in Slova
 
 Open `index.html` directly in a browser — no build step.
 
+`tickets-prototype/` — separate test prototype of own ticket sales (Node 22 + Express + Stripe Checkout in TEST mode,
+SQLite via `node:sqlite`). `npm install && npm start` → http://localhost:4242 (`/buy`, `/scan`, `/admin`).
+Without `STRIPE_SECRET_KEY` in `tickets-prototype/.env` it runs in demo mode with a simulated payment. Refuses `sk_live_` keys.
+Not connected to the main site; the main site still sells via Tootoot. See `tickets-prototype/README.md`.
+
 ## Design rules
 - Strictly black and white: `#000000`, `#FFFFFF`
 - Greys: `#A3A3A3` (small text on black), `#5C5C5C` (small text on white), `#141414` / `#262626` / `#333333` (photo placeholders, dividers)

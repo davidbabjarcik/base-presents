@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Door scanner · Base Presents</title>
+<link rel="icon" href="/assets/favicon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css">
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+<header class="top">
+  <a href="/buy"><img src="/assets/base-logo-white.png" alt="Base Presents"></a>
+  <span class="badge">Door</span>
+</header>
+<main class="wrap" style="display:flex;flex-direction:column;gap:20px;max-width:520px">
+  <h1 style="margin:0">Scanner</h1>
+
+  <form id="login" class="card">
+    <label><span class="label">Staff PIN</span><input id="pin" type="password" inputmode="numeric" autocomplete="off"></label>
+    <button class="btn" type="submit"><span>Start</span><span>→</span></button>
+  </form>
+
+  <section id="app" class="hidden" style="display:flex;flex-direction:column;gap:20px">
+    <div id="result" class="result bad"><strong>Ready</strong><span>Scan a ticket QR code</span></div>
+    <div id="reader"></div>
+    <button class="btn ghost" id="cam" type="button"><span>Start camera</span><span>◉</span></button>
+    <form id="manual" style="display:flex;gap:8px">
+      <input id="code" placeholder="XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" aria-label="Ticket code">
+      <button class="btn" type="submit" style="width:auto"><span>Check</span></button>
+    </form>
+    <p class="muted" style="margin:0">The camera works on <code>localhost</code> or an <code>https://</code> address. On other setups type the code from the ticket.</p>
+  </section>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  let pin = '';
+  try { pin = sessionStorage.getItem('bp-pin') || ''; } catch (e) {}
+  let busy = false, lastCode = '', lastAt = 0, scanner = null;
+
+  function show(data) {
+    const el = $('result');
+    const ok = data.result === 'ok';
+    el.className = 'result ' + (ok ? 'ok' : 'bad');
+    const title = { ok: 'Valid', used: 'Used', invalid: 'Invalid', auth: 'PIN?' }[data.result] || 'Error';
+    el.innerHTML = '<strong></strong><span></span>';
+    el.querySelector('strong').textContent = title;
+    el.querySelector('span').textContent = [data.message, data.holder, data.code].filter(Boolean).join(' · ');
+    if (navigator.vibrate) navigator.vibrate(ok ? 80 : [60, 60, 60]);
+  }
+
+  async function check(code) {
+    const now = Date.now();
+    if (busy || (code === lastCode && now - lastAt < 3000)) return; // ignore the same QR seen twice in a row
+    busy = true; lastCode = code; lastAt = now;
+    try {
+      const r = await fetch('/api/checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-staff-pin': pin },
+        body: JSON.stringify({ code })
+      });
+      const data = await r.json();
+      show(data);
+      if (data.result === 'auth') logout();
+    } catch (e) {
+      show({ result: 'error', message: 'No connection' });
+    } finally { busy = false; }
+  }
+
+  function logout() {
+    try { sessionStorage.removeItem('bp-pin'); } catch (e) {}
+    $('app').classList.add('hidden'); $('login').classList.remove('hidden');
+  }
+  function enter() { $('login').classList.add('hidden'); $('app').classList.remove('hidden'); }
+
+  $('login').onsubmit = (e) => {
+    e.preventDefault();
+    pin = $('pin').value.trim();
+    try { sessionStorage.setItem('bp-pin', pin); } catch (e) {}
+    enter();
+  };
+  if (pin) enter();
+
+  $('manual').onsubmit = (e) => { e.preventDefault(); const c = $('code').value.trim(); if (c) check(c); $('code').value = ''; };
+
+  $('cam').onclick = async () => {
+    if (!window.Html5Qrcode) { show({ result: 'error', message: 'Scanner library did not load' }); return; }
+    if (scanner) { await scanner.stop(); scanner = null; $('cam').firstElementChild.textContent = 'Start camera'; return; }
+    scanner = new Html5Qrcode('reader');
+    try {
+      await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 240 }, (text) => check(text.trim()));
+      $('cam').firstElementChild.textContent = 'Stop camera';
+    } catch (err) {
+      scanner = null;
+      show({ result: 'error', message: 'Camera not available: ' + err });
+    }
+  };
+</script>
+</body>
+</html>
