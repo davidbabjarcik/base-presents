@@ -15,6 +15,7 @@ Open `index.html` directly in a browser — no build step.
 `tickets-prototype/` — separate test prototype of own ticket sales (Node 22 + Express + Stripe Checkout in TEST mode,
 SQLite via `node:sqlite`). `npm install && npm start` → http://localhost:4242 (`/buy`, `/scan`, `/admin`).
 Without `STRIPE_SECRET_KEY` in `tickets-prototype/.env` it runs in demo mode with a simulated payment. Refuses `sk_live_` keys.
+`/admin` and `/scan` need a staff login (`/login`, one shared account from `ADMIN_EMAIL` / `ADMIN_PASSWORD`, default email base@base.com; HttpOnly session cookie, in-memory sessions).
 Not connected to the main site; the main site still sells via Tootoot. See `tickets-prototype/README.md`.
 
 ## Design rules

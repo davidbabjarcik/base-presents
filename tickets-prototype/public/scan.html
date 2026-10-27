@@ -12,17 +12,13 @@
 <body>
 <header class="top">
   <a href="/buy"><img src="/assets/base-logo-white.png" alt="Base Presents"></a>
-  <span class="badge">Door</span>
+  <button class="badge" id="logout" type="button" style="background:none;cursor:pointer;min-height:36px">Log out</button>
 </header>
 <main class="wrap" style="display:flex;flex-direction:column;gap:20px;max-width:520px">
   <h1 style="margin:0">Scanner</h1>
 
-  <form id="login" class="card">
-    <label><span class="label">Staff PIN</span><input id="pin" type="password" inputmode="numeric" autocomplete="off"></label>
-    <button class="btn" type="submit"><span>Start</span><span>→</span></button>
-  </form>
 
-  <section id="app" class="hidden" style="display:flex;flex-direction:column;gap:20px">
+  <section id="app" style="display:flex;flex-direction:column;gap:20px">
     <div id="result" class="result bad"><strong>Ready</strong><span>Scan a ticket QR code</span></div>
     <div id="reader"></div>
     <button class="btn ghost" id="cam" type="button"><span>Start camera</span><span>◉</span></button>
@@ -35,15 +31,13 @@
 </main>
 <script>
   const $ = (id) => document.getElementById(id);
-  let pin = '';
-  try { pin = sessionStorage.getItem('bp-pin') || ''; } catch (e) {}
   let busy = false, lastCode = '', lastAt = 0, scanner = null;
 
   function show(data) {
     const el = $('result');
     const ok = data.result === 'ok';
     el.className = 'result ' + (ok ? 'ok' : 'bad');
-    const title = { ok: 'Valid', used: 'Used', invalid: 'Invalid', auth: 'PIN?' }[data.result] || 'Error';
+    const title = { ok: 'Valid', used: 'Used', invalid: 'Invalid', auth: 'Log in' }[data.result] || 'Error';
     el.innerHTML = '<strong></strong><span></span>';
     el.querySelector('strong').textContent = title;
     el.querySelector('span').textContent = [data.message, data.holder, data.code].filter(Boolean).join(' · ');
@@ -57,30 +51,20 @@
     try {
       const r = await fetch('/api/checkin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-staff-pin': pin },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code })
       });
       const data = await r.json();
       show(data);
-      if (data.result === 'auth') logout();
+      if (data.result === 'auth') toLogin();
     } catch (e) {
       show({ result: 'error', message: 'No connection' });
     } finally { busy = false; }
   }
 
-  function logout() {
-    try { sessionStorage.removeItem('bp-pin'); } catch (e) {}
-    $('app').classList.add('hidden'); $('login').classList.remove('hidden');
-  }
-  function enter() { $('login').classList.add('hidden'); $('app').classList.remove('hidden'); }
-
-  $('login').onsubmit = (e) => {
-    e.preventDefault();
-    pin = $('pin').value.trim();
-    try { sessionStorage.setItem('bp-pin', pin); } catch (e) {}
-    enter();
-  };
-  if (pin) enter();
+  const toLogin = () => location.replace('/login?next=/scan');
+  fetch('/api/me').then((r) => { if (!r.ok) toLogin(); });
+  $('logout').onclick = async () => { await fetch('/api/logout', { method: 'POST' }); toLogin(); };
 
   $('manual').onsubmit = (e) => { e.preventDefault(); const c = $('code').value.trim(); if (c) check(c); $('code').value = ''; };
 

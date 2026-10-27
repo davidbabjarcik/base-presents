@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staff login · Base Presents</title>
+<link rel="icon" href="/assets/favicon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <a href="/buy"><img src="/assets/base-logo-white.png" alt="Base Presents"></a>
+  <span class="badge">Staff</span>
+</header>
+<main class="wrap">
+  <span class="label">Admin &amp; door scanner</span>
+  <h1>Log in</h1>
+  <form class="card" id="form" novalidate>
+    <label><span class="label">Email</span><input id="email" type="email" autocomplete="username" required></label>
+    <label><span class="label">Password</span><input id="password" type="password" autocomplete="current-password" required></label>
+    <p class="msg" id="msg" role="status"></p>
+    <button class="btn" id="go" type="submit"><span>Log in</span><span>→</span></button>
+  </form>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  // Only allow returning to our own staff pages
+  const next = ['/admin', '/scan'].includes(new URLSearchParams(location.search).get('next'))
+    ? new URLSearchParams(location.search).get('next') : '/admin';
+
+  fetch('/api/me').then((r) => { if (r.ok) location.replace(next); });
+
+  $('form').onsubmit = async (e) => {
+    e.preventDefault();
+    $('go').disabled = true;
+    $('msg').className = 'msg'; $('msg').textContent = '';
+    try {
+      const r = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: $('email').value, password: $('password').value })
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Login failed');
+      location.replace(next);
+    } catch (err) {
+      $('msg').className = 'msg err'; $('msg').textContent = err.message;
+      $('password').value = '';
+      $('go').disabled = false;
+    }
+  };
+</script>
+</body>
+</html>

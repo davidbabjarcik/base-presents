@@ -18,8 +18,9 @@ Potom otvor:
 | Lístky | `/order/<id>?t=<token>` | po zaplatení: lístky s QR kódom (tento odkaz by prišiel e-mailom) |
 | Skener | http://localhost:4242/scan | kontrola pri vstupe: kamera alebo ručne zadaný kód |
 | Admin | http://localhost:4242/admin | predané, zostáva, tržba, koľko ľudí už prišlo, objednávky |
+| Login | http://localhost:4242/login | prihlásenie pre tím (admin + skener) |
 
-Skener a admin chránia PIN (`STAFF_PIN`, predvolene `1234`).
+Skener a admin sú za prihlásením. Účet sa nastavuje v `.env` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`); predvolený testovací účet je v `.env.example`. Heslo pred ukázaním niekomu inému zmeň. Prihlásenie platí 12 hodín, po reštarte servera sa treba prihlásiť znova. Po 10 zlých pokusoch z jednej adresy sa login na 15 minút zablokuje.
 
 ## Demo vs. Stripe test mód
 
@@ -42,6 +43,7 @@ Dáta sú v SQLite súbore `data/tickets.db` (zmaž ho, ak chceš začať odznov
 
 ## Čo chýba do ostrej prevádzky
 
+- viac účtov pre tím (teraz je jeden spoločný) a hashované heslá v databáze
 - skutočné posielanie e-mailov (teraz sa len vypíše do konzoly), napr. cez Resend alebo Brevo
 - hosting s HTTPS (Render, Railway, Fly.io…), záloha databázy
 - Stripe účet overený na firmu/živnosť, obchodné podmienky, GDPR, vrátenie peňazí

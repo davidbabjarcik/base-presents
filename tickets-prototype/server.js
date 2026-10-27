@@ -27,7 +27,10 @@ const EVENT = {
   capacity: Number(process.env.EVENT_CAPACITY || 1400),
   maxPerOrder: Number(process.env.MAX_PER_ORDER || 6)
 };
-const STAFF_PIN = process.env.STAFF_PIN || '1234';
+// Staff login for /admin and /scan (prototype: one shared account from .env)
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'base@base.com').toLowerCase();
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'base-test-2026';
+const SESSION_HOURS = 12;
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || '';
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const HOLD_MINUTES = 30; // Stripe Checkout sessions live at least 30 min; seats are held that long
@@ -109,10 +112,36 @@ function fulfill(orderId) {
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const eur = (cents) => (cents / 100).toFixed(2).replace('.', ',') + ' €';
-const staffOk = (req) => {
-  const pin = String(req.get('x-staff-pin') || '');
-  return pin.length === STAFF_PIN.length && crypto.timingSafeEqual(Buffer.from(pin), Buffer.from(STAFF_PIN));
+// ---- Staff sessions (in memory: a server restart logs everyone out) ----
+const sessions = new Map(); // token -> expiresAt
+const sameText = (a, b) => {
+  const ha = crypto.createHash('sha256').update(String(a)).digest();
+  const hb = crypto.createHash('sha256').update(String(b)).digest();
+  return crypto.timingSafeEqual(ha, hb);
 };
+const cookieToken = (req) => {
+  const m = /(?:^|;\s*)bp_session=([^;]+)/.exec(req.get('cookie') || '');
+  return m ? m[1] : '';
+};
+const staffOk = (req) => {
+  const token = cookieToken(req);
+  const exp = sessions.get(token);
+  if (!exp) return false;
+  if (exp < now()) { sessions.delete(token); return false; }
+  return true;
+};
+// Slow down password guessing: max 10 failed attempts per IP per 15 minutes
+const failed = new Map(); // ip -> { n, since }
+function tooManyAttempts(ip) {
+  const f = failed.get(ip);
+  if (!f || now() - f.since > 15 * 60000) return false;
+  return f.n >= 10;
+}
+function noteFailure(ip) {
+  const f = failed.get(ip);
+  if (!f || now() - f.since > 15 * 60000) failed.set(ip, { n: 1, since: now() });
+  else f.n += 1;
+}
 
 // ---- App ----
 const app = express();
@@ -283,9 +312,36 @@ app.get('/order/:id', async (req, res) => {
     <div class="tickets">${cards.join('')}</div>`));
 });
 
+// Staff login / logout
+app.post('/api/login', (req, res) => {
+  const ip = req.ip;
+  if (tooManyAttempts(ip)) return res.status(429).json({ error: 'Too many attempts. Try again in 15 minutes.' });
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const password = String(req.body.password || '');
+  const ok = sameText(email, ADMIN_EMAIL) & sameText(password, ADMIN_PASSWORD); // no short-circuit on purpose
+  if (!ok) { noteFailure(ip); return res.status(401).json({ error: 'Wrong email or password.' }); }
+  failed.delete(ip);
+  const token = randomId(24);
+  sessions.set(token, now() + SESSION_HOURS * 3600000);
+  const secure = BASE_URL.startsWith('https://') ? '; Secure' : '';
+  res.set('Set-Cookie', `bp_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_HOURS * 3600}${secure}`);
+  res.json({ ok: true, email: ADMIN_EMAIL });
+});
+
+app.post('/api/logout', (req, res) => {
+  sessions.delete(cookieToken(req));
+  res.set('Set-Cookie', 'bp_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');
+  res.json({ ok: true });
+});
+
+app.get('/api/me', (req, res) => {
+  if (!staffOk(req)) return res.status(401).json({ error: 'Not logged in' });
+  res.json({ email: ADMIN_EMAIL });
+});
+
 // Door check-in (staff only)
 app.post('/api/checkin', (req, res) => {
-  if (!staffOk(req)) return res.status(401).json({ result: 'auth', message: 'Wrong staff PIN' });
+  if (!staffOk(req)) return res.status(401).json({ result: 'auth', message: 'Please log in' });
   const code = normCode(req.body.code);
   const out = transaction(() => {
     const t = db.prepare(`SELECT t.*, o.status FROM tickets t JOIN orders o ON o.id = t.order_id WHERE t.code = ?`).get(code);
@@ -301,7 +357,7 @@ app.post('/api/checkin', (req, res) => {
 
 // Sales overview (staff only)
 app.get('/api/admin/summary', (req, res) => {
-  if (!staffOk(req)) return res.status(401).json({ error: 'Wrong staff PIN' });
+  if (!staffOk(req)) return res.status(401).json({ error: 'Please log in' });
   const sold = db.prepare("SELECT COUNT(*) AS n FROM tickets t JOIN orders o ON o.id = t.order_id WHERE o.status = 'paid'").get().n;
   const checkedIn = db.prepare('SELECT COUNT(*) AS n FROM tickets WHERE checked_in_at IS NOT NULL').get().n;
   const revenue = db.prepare("SELECT COALESCE(SUM(amount_cents), 0) AS c FROM orders WHERE status = 'paid'").get().c;
@@ -335,5 +391,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Base Presents tickets prototype → ${BASE_URL}  (mode: ${MODE})`);
   console.log(`  Buy:     ${BASE_URL}/buy`);
-  console.log(`  Scanner: ${BASE_URL}/scan   Admin: ${BASE_URL}/admin   (staff PIN from .env)`);
+  console.log(`  Scanner: ${BASE_URL}/scan   Admin: ${BASE_URL}/admin   (staff login: ${ADMIN_EMAIL})`);
 });
