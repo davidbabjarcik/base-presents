@@ -140,6 +140,33 @@ export function openDb(dir) {
     );
 
     -- Staff planning: one sheet per day, people per group with the hours they are there
+    -- Printed (paper) tickets: generated in batches, printed in advance, count only when sold
+    CREATE TABLE IF NOT EXISTS ticket_batches (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      label TEXT NOT NULL,
+      kind TEXT NOT NULL,                 -- presale | door
+      price_cents INTEGER NOT NULL,
+      first_serial INTEGER NOT NULL,
+      qty INTEGER NOT NULL,
+      note TEXT,
+      created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      created_at INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS paper_tickets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      batch_id INTEGER NOT NULL REFERENCES ticket_batches(id) ON DELETE CASCADE,
+      serial INTEGER NOT NULL UNIQUE,     -- number printed on the ticket (#0001)
+      code TEXT NOT NULL UNIQUE,          -- QR content
+      status TEXT NOT NULL DEFAULT 'unsold', -- unsold | sold | void
+      assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL, -- seller who holds the printed ticket
+      seller_id INTEGER REFERENCES users(id) ON DELETE SET NULL,   -- who actually sold it
+      sold_at INTEGER,
+      payment TEXT,                       -- cash | card | free
+      checked_in_at INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS paper_status ON paper_tickets(status);
+    CREATE INDEX IF NOT EXISTS paper_assigned ON paper_tickets(assigned_to);
+
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL                 -- JSON

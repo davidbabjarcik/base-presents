@@ -39,7 +39,7 @@
     const el = $('result');
     const ok = data.result === 'ok';
     el.className = 'result ' + (ok ? 'ok' : 'bad');
-    const title = { ok: 'Valid', used: 'Used', invalid: 'Invalid', auth: 'Log in' }[data.result] || 'Error';
+    const title = { ok: 'Valid', used: 'Used', invalid: 'Invalid', unsold: 'Not sold', auth: 'Log in' }[data.result] || 'Error';
     el.innerHTML = '<strong></strong><span></span>';
     el.querySelector('strong').textContent = title;
     el.querySelector('span').textContent = [data.message, data.holder, data.code].filter(Boolean).join(' · ');

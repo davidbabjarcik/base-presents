@@ -3,6 +3,8 @@
   const SECTIONS = [
     ['app', '/app', 'Overview'],
     ['tickets', '/tickets', 'Tickets'],
+    ['tickets', '/printed', 'Printed tickets'],
+    ['sell', '/sell', 'Sell'],
     ['tickets', '/scan', 'Scanner'],
     ['tickets', '/ticket-design', 'Ticket design'],
     ['stock', '/stock', 'Stock'],

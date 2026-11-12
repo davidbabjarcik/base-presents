@@ -17,7 +17,7 @@
   <span class="label">BASE Hub · team only</span>
   <h1>Log in</h1>
   <form class="card" id="form" novalidate>
-    <label><span class="label">Email</span><input id="email" type="email" autocomplete="username" required></label>
+    <label><span class="label">Email or username</span><input id="email" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
     <label><span class="label">Password</span><input id="password" type="password" autocomplete="current-password" required></label>
     <p class="msg" id="msg" role="status"></p>
     <button class="btn" id="go" type="submit"><span>Log in</span><span>→</span></button>
@@ -26,7 +26,7 @@
 <script>
   const $ = (id) => document.getElementById(id);
   // Only allow returning to our own staff pages
-  const PAGES = ['/app', '/tickets', '/scan', '/ticket-design', '/stock', '/staff', '/promo', '/stats', '/ideas', '/users'];
+  const PAGES = ['/app', '/tickets', '/printed', '/sell', '/scan', '/ticket-design', '/stock', '/staff', '/promo', '/stats', '/ideas', '/users'];
   const wanted = new URLSearchParams(location.search).get('next');
   const next = PAGES.includes(wanted) ? wanted : '/app';
 

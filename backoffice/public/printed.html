@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Printed tickets · BASE Hub</title>
+<link rel="icon" href="/assets/favicon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/hub.css">
+<script src="/hub.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <span class="label" id="when">Printed tickets</span>
+  <h1>Printed tickets</h1>
+  <p class="muted" style="margin:-8px 0 24px;max-width:720px">Generate tickets in advance, print them, give them to sellers. A printed ticket counts only when a seller marks it <b>sold</b>. Unsold ones are not in the totals and do not open the door.</p>
+
+  <div class="stats" id="totals" style="margin-top:0"></div>
+
+  <details class="box" open>
+    <summary>1 · Generate tickets to print</summary>
+    <form id="gen" class="form-row">
+      <label><span class="label">Type</span><select name="kind"><option value="presale">Presale (predpredaj)</option><option value="door">Door (na mieste)</option></select></label>
+      <label><span class="label">How many</span><input name="qty" inputmode="numeric" required placeholder="e.g. 300"></label>
+      <label><span class="label">Price €</span><input name="price" inputmode="decimal" required placeholder="e.g. 10"></label>
+      <label><span class="label">Name (optional)</span><input name="label" maxlength="60" placeholder="e.g. Presale ŠRJ"></label>
+      <button class="btn small" type="submit"><span>Generate</span><span>→</span></button>
+    </form>
+    <p class="muted" style="font-size:13px;margin:12px 0 0">Every ticket gets a running number (#0001, #0002…) and its own QR code. Then print the PDF: 10 tickets per A4 page, cut along the dashed lines.</p>
+  </details>
+
+  <div class="section-title"><h2>Batches</h2></div>
+  <div class="scroll"><table>
+    <thead><tr><th>Name</th><th>Type</th><th>Numbers</th><th class="num">Price</th><th class="num">Sold</th><th class="num">Not sold</th><th class="num">Void</th><th class="num">Revenue</th><th class="num">At door</th><th></th></tr></thead>
+    <tbody id="batches"></tbody>
+  </table></div>
+
+  <div class="grid" style="margin-top:32px;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr))">
+    <section class="panel">
+      <span class="label">2 · Give tickets to a seller</span>
+      <form id="assign" class="form-row">
+        <label><span class="label">From #</span><input name="from" inputmode="numeric" required></label>
+        <label><span class="label">To #</span><input name="to" inputmode="numeric" required></label>
+        <label style="grid-column:span 2"><span class="label">Seller</span><select name="user_id" id="people-sel"></select></label>
+        <button class="btn small" type="submit"><span>Assign</span></button>
+      </form>
+      <p class="muted" style="font-size:13px;margin:0">Only unsold tickets move. Choose “— nobody —” to take tickets back. Need a new seller account (e.g. <code>policiasrj9</code>)? Add it in <a href="/users">Users</a> with the role <b>Seller</b>.</p>
+    </section>
+    <section class="panel">
+      <span class="label">Void lost or leftover tickets</span>
+      <form id="void" class="form-row">
+        <label><span class="label">From #</span><input name="from" inputmode="numeric" required></label>
+        <label><span class="label">To #</span><input name="to" inputmode="numeric" required></label>
+        <button class="btn small ghost" type="submit"><span>Void</span></button>
+        <button class="btn small ghost" type="button" id="unvoid"><span>Undo void</span></button>
+      </form>
+      <p class="muted" style="font-size:13px;margin:0">A voided ticket can not be sold and does not open the door. Sold tickets are never voided.</p>
+    </section>
+  </div>
+
+  <div class="section-title"><h2>Sellers</h2><span class="label">Money each seller should hand over</span></div>
+  <div class="scroll"><table>
+    <thead><tr><th>Seller</th><th>Role</th><th>Numbers</th><th class="num">Holding (unsold)</th><th class="num">Sold</th><th class="num">Cash</th><th class="num">Card</th><th class="num">Total</th></tr></thead>
+    <tbody id="people"></tbody>
+  </table></div>
+
+  <div class="section-title"><h2>Latest sales</h2></div>
+  <div class="scroll"><table>
+    <thead><tr><th>Time</th><th>Ticket</th><th>Type</th><th>Seller</th><th>Paid</th><th class="num">Price</th><th>Door</th></tr></thead>
+    <tbody id="recent"></tbody>
+  </table></div>
+</main>
+<script>
+(async () => {
+  const { h, api, eur, n } = Hub;
+  await Hub.start('tickets');
+  const pad = (x) => '#' + String(x).padStart(4, '0');
+  const KIND = { presale: 'Presale', door: 'Door' };
+  const ROLE = { seller: 'Seller', tickets: 'Ticket sales', admin: 'Admin' };
+  const PAY = { cash: 'Cash', card: 'Card', free: 'Free' };
+
+  async function load() {
+    const d = await api('/api/paper');
+    Hub.$('#when').textContent = `${d.event.name} · ${d.event.date}`;
+    const tot = d.batches.reduce((t, b) => ({
+      printed: t.printed + b.qty - (b.void || 0), sold: t.sold + (b.sold || 0), unsold: t.unsold + (b.unsold || 0), revenue: t.revenue + b.revenue
+    }), { printed: 0, sold: 0, unsold: 0, revenue: 0 });
+    Hub.$('#totals').replaceChildren(
+      h('div', {}, h('b', {}, n(tot.printed)), h('span', { class: 'label' }, 'Printed (valid)')),
+      h('div', {}, h('b', {}, n(tot.sold)), h('span', { class: 'label' }, 'Sold')),
+      h('div', {}, h('b', {}, n(tot.unsold)), h('span', { class: 'label' }, 'Not sold yet')),
+      h('div', {}, h('b', {}, eur(tot.revenue)), h('span', { class: 'label' }, 'Revenue')));
+
+    Hub.$('#batches').replaceChildren(...(d.batches.length ? d.batches.map((b) => h('tr', {},
+      h('td', {}, h('b', {}, b.label)),
+      h('td', {}, h('span', { class: 'chip' + (b.kind === 'door' ? '' : ' solid') }, KIND[b.kind])),
+      h('td', {}, `${pad(b.first_serial)}–${pad(b.first_serial + b.qty - 1)}`),
+      h('td', { class: 'num' }, eur(b.price_cents)),
+      h('td', { class: 'num' }, h('b', {}, b.sold || 0)),
+      h('td', { class: 'num' }, b.unsold || 0),
+      h('td', { class: 'num' }, b.void || 0),
+      h('td', { class: 'num' }, eur(b.revenue)),
+      h('td', { class: 'num' }, b.checked_in || 0),
+      h('td', { class: 'num', style: 'white-space:nowrap' },
+        h('a', { class: 'btn small', href: `/api/paper/batches/${b.id}/print.pdf?download=1` }, h('span', {}, 'Print PDF ↓')), ' ',
+        (b.sold ? null : h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Delete batch ' + b.label, onclick: () => Hub.run(async () => {
+          if (!confirm(`Delete batch "${b.label}" (${b.qty} tickets)? Printed copies will stop working.`)) return;
+          await api('/api/paper/batches/' + b.id, { method: 'DELETE' }); await load();
+        }) }, '×')))))
+      : [h('tr', {}, h('td', { colspan: '10', class: 'muted' }, 'No printed tickets yet. Generate the first batch above.'))]));
+
+    const sel = Hub.$('#people-sel'), keep = sel.value;
+    sel.replaceChildren(h('option', { value: '' }, '— nobody (take back) —'), ...d.people.map((p) => h('option', { value: p.id }, `${p.name} (${ROLE[p.role] || p.role})`)));
+    if (keep) sel.value = keep;
+
+    Hub.$('#people').replaceChildren(...d.people.filter((p) => p.holding || p.sold || p.role === 'seller').map((p) => h('tr', {},
+      h('td', {}, h('b', {}, p.name)), h('td', {}, ROLE[p.role] || p.role),
+      h('td', {}, p.range && p.range !== '–' ? p.range.split('–').map(pad).join('–') : '—'),
+      h('td', { class: 'num' }, p.holding), h('td', { class: 'num' }, h('b', {}, p.sold)),
+      h('td', { class: 'num' }, eur(p.cash)), h('td', { class: 'num' }, eur(p.card)), h('td', { class: 'num' }, h('b', {}, eur(p.cash + p.card))))));
+
+    Hub.$('#recent').replaceChildren(...(d.recent.length ? d.recent.map((r) => h('tr', {},
+      h('td', {}, Hub.when(r.sold_at)), h('td', {}, pad(r.serial)), h('td', {}, KIND[r.kind]), h('td', {}, r.seller || '—'),
+      h('td', {}, PAY[r.payment] || r.payment), h('td', { class: 'num' }, r.payment === 'free' ? '0,00 €' : eur(r.price_cents)),
+      h('td', {}, r.checked_in_at ? 'in ✓' : '')))
+      : [h('tr', {}, h('td', { colspan: '7', class: 'muted' }, 'No printed tickets sold yet.'))]));
+  }
+
+  Hub.$('#gen').onsubmit = (e) => Hub.run(async () => {
+    e.preventDefault();
+    const r = await api('/api/paper/batches', { body: Hub.formData(e.target) });
+    e.target.reset(); Hub.toast(`Generated ${pad(r.first)}–${pad(r.last)}. Now print the PDF.`); await load();
+  });
+  Hub.$('#assign').onsubmit = (e) => Hub.run(async () => {
+    e.preventDefault();
+    const r = await api('/api/paper/assign', { body: Hub.formData(e.target) });
+    Hub.toast(`${r.changed} tickets assigned`); await load();
+  });
+  Hub.$('#void').onsubmit = (e) => Hub.run(async () => {
+    e.preventDefault();
+    if (!confirm('Void the unsold tickets in this range?')) return;
+    const r = await api('/api/paper/void', { body: Hub.formData(e.target) });
+    Hub.toast(`${r.changed} tickets voided`); await load();
+  });
+  Hub.$('#unvoid').onclick = () => Hub.run(async () => {
+    const r = await api('/api/paper/unvoid', { body: Hub.formData(Hub.$('#void')) });
+    Hub.toast(`${r.changed} tickets back to unsold`); await load();
+  });
+  await load();
+  setInterval(() => Hub.run(load), 15000);
+})();
+</script>
+</body>
+</html>

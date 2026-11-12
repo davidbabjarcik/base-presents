@@ -14,6 +14,7 @@ import { registerTickets } from './tickets.js';
 import { registerHub } from './hub.js';
 import { registerDesign } from './design.js';
 import { registerSignup } from './signup.js';
+import { registerPaper } from './paper.js';
 import { seedRealEvents, loadDemo, removeDemo, hasDemo } from './demo.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -66,7 +67,9 @@ if (seedRealEvents(db)) {
 const app = express();
 app.disable('x-powered-by');
 
+const hooks = {}; // lets printed tickets plug into capacity, check-in and totals
 const registerTicketJson = registerTickets(app, {
+  hooks,
   db, auth, stripe, mode: MODE, event: EVENT, baseUrl: BASE_URL, siteUrl: SITE_URL, webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || ''
 }); // registers the raw-body Stripe webhook first
 
@@ -96,6 +99,10 @@ app.get('/api/me', auth.me);
 
 registerTicketJson();
 registerHub(app, { db, auth });
+const paper = registerPaper(app, { db, auth, event: EVENT, assetsDir: path.join(__dirname, '..', 'assets'), seatsTaken: registerTicketJson.seatsTaken });
+hooks.paperSold = paper.soldCount;
+hooks.paperCheckin = paper.checkin;
+hooks.paperTotals = paper.totals;
 registerSignup(app, { db, auth, publicDir: path.join(__dirname, 'public') });
 registerDesign(app, { db, auth, event: EVENT, assetsDir: path.join(__dirname, '..', 'assets'), dataDir: path.join(__dirname, 'data') });
 

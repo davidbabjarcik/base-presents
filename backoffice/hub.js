@@ -389,9 +389,11 @@ export function registerHub(app, { db, auth }) {
     const email = str(req.body.email, 120)?.toLowerCase();
     const name = str(req.body.name, 60);
     const password = String(req.body.password || '');
-    if (!email || !/^[^\s@]+@[^\s@]+$/.test(email) || !name) return bad(res, 'Fill in name and email.');
+    // Login can be an email or a simple username like policiasrj9
+    const okLogin = email && (/^[^\s@]+@[^\s@]+$/.test(email) || /^[a-z0-9][a-z0-9._-]{2,39}$/.test(email));
+    if (!okLogin || !name) return bad(res, 'Fill in a name and a login (email, or a username of 3+ letters/numbers).');
     if (password.length < 5) return bad(res, 'Password needs at least 5 characters.');
-    if (db.prepare('SELECT 1 FROM users WHERE email = ?').get(email)) return bad(res, 'This email already has an account.');
+    if (db.prepare('SELECT 1 FROM users WHERE email = ?').get(email)) return bad(res, 'This login already has an account.');
     db.prepare('INSERT INTO users (email, name, role, password_hash, created_at) VALUES (?, ?, ?, ?, ?)')
       .run(email, name, oneOf(req.body.role, Object.keys(ROLES), 'team'), hashPassword(password), now());
     res.json({ ok: true });

@@ -9,6 +9,8 @@ Interná aplikácia pre tím Base Presents. **Prototyp**: beží u teba na poč�
 | Prihlásenie | http://localhost:4242/login | vstup pre tím |
 | Prehľad | `/app` | najbližší event, predané lístky, nízky sklad, najbližšie promo, top nápady, posledný event |
 | Lístky | `/tickets` | predaj lístkov: predané, zostáva, tržba, koľko ľudí prišlo, objednávky |
+| Printed tickets | `/printed` | tlačené lístky: generovanie, PDF na tlač, pridelenie predajcom, zneplatnenie, kto koľko predal a koľko peňazí má odovzdať |
+| Sell | `/sell` | predaj tlačených lístkov (predajcovia aj tím): naskenuj QR alebo napíš číslo → hotovosť / karta |
 | Skener | `/scan` | kontrola lístkov pri vstupe (kamera alebo ručne zadaný kód) |
 | Ticket design | `/ticket-design` | ako vyzerá PDF lístok: čierny/biely, obrázok, texty, náhľad |
 | Sklad | `/stock` | alko / nealko / materiál: stav, objem, cena za kus, hodnota skladu, odbery (aj komis a free), výdaj na event, straty, inventúra, história |
@@ -96,6 +98,20 @@ Podrobný návod (test mód, testovacie karty, webhook, vzhľad, ako ísť naost
 
 Stručne: na stripe.com si vytvor účet, zapni **Test mode** → Developers → API keys → skopíruj **Secret key** do `STRIPE_SECRET_KEY` a reštartuj server.
 
+### Tlačené lístky a predajcovia (predpredaj aj na mieste)
+Lístky sa dajú predávať aj **fyzicky**: vytlačíte ich vopred a predávajú ich predajcovia (napr. študentské rady) alebo tím na mieste.
+
+1. **Účty predajcov**: v **Users** pridaj človeka s rolou **Seller**. Login môže byť e-mail alebo len meno, napr. `policiasrj9`, `policiasrj5`. Predajca po prihlásení vidí len **Sell**. Ľudia z tímu s rolou *Ticket sales* alebo *Admin* môžu predávať tiež.
+2. **Vygeneruj lístky** v **Printed tickets** → *Generate*: typ (**Presale** = predpredaj, **Door** = na mieste), počet (napr. 300) a cena. Každý lístok dostane poradové číslo (#0001…) a vlastný QR kód. Čísla idú ďalej, ďalšia dávka začne tam, kde skončila predošlá.
+3. **Vytlač**: pri dávke klikni **Print PDF**. Na jednej A4 je 10 lístkov (2 × 5) s čiarami na strihanie, biele, aby sa šetril toner. Lístok má logo, event, dátum, miesto, typ, cenu, QR a veľké číslo.
+4. **Rozdaj predajcom**: *Give tickets to a seller* → od #1 do #50 → vyber predajcu. Presunú sa len nepredané lístky. *— nobody —* ich vezme späť.
+5. **Predaj** (`/sell`, ide aj na mobile): predajca naskenuje QR kamerou alebo napíše číslo lístka (napr. `42`) → **Cash** alebo **Card**. Na mieste môže zaškrtnúť *Also let them in now* a človek je rovno vpustený.
+   - Predajca predá **len lístky, ktoré dostal**. Tím (Ticket sales, Admin) predá akýkoľvek a môže dať aj **Free** (guest list).
+   - **Storno**: predajca do 15 minút od predaja (tlačidlo ↺), tím kedykoľvek. Lístok, s ktorým už niekto vošiel, sa stornovať nedá.
+6. **Počítanie**: do predaných lístkov, tržby a kapacity sa počítajú **len predané** tlačené lístky. Ak vytlačíte 300 a predá sa 200, zvyšných 100 sa nepočíta nikde. Na stránke **Tickets** je rozpis: online / tlačený predpredaj / na mieste. V **Printed tickets** vidíš pri každom predajcovi, koľko lístkov ešte drží, koľko predal a koľko **hotovosti má odovzdať**.
+7. **Vstup**: skener pozná aj tlačené lístky (QR aj číslo). Predaný → pustí. **Nepredaný** → *Not sold, do not let in*, takže ukradnutý alebo stratený nepredaný lístok nefunguje. Zneplatnený → neplatný.
+8. **Zneplatnenie**: stratené, poškodené alebo po evente zvyšné nepredané lístky zneplatníš rozsahom čísel (*Void*). Predané sa zneplatniť nedajú. *Undo void* ich vráti.
+
 ### Ticket design (PDF lístok)
 - Nastavuje sa v **Ticket design** (`/ticket-design`), vidí ho admin a účet Lístky.
 - **Farby**: čierny alebo biely lístok.
@@ -166,11 +182,12 @@ Eventy z project reportu (Chodbovica 1–5 s dátumami a miestami, dva Chillouty
 - **Demo dáta**: tlačidlo *Remove demo data* zmaže ukážkové čísla, sklad, promo príspevky a ukážkový nápad. Skutočné eventy a všetko, čo ste zadali vy, ostane.
 
 ### Roly
-| Rola | Lístky + skener + ticket design | Sklad | Staff | Promo | Štatistiky | Nápady | Účty |
-|---|---|---|---|---|---|---|---|
-| Admin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Ticket sales (Lístky) | ✓ | – | – | ✓ | – | ✓ | – |
-| Team (Staff) | – | ✓ | ✓ | ✓ | ✓ | ✓ | – |
+| Rola | Lístky, tlačené lístky, skener, ticket design | Sell | Sklad | Staff | Promo | Štatistiky | Nápady | Účty |
+|---|---|---|---|---|---|---|---|---|
+| Admin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Ticket sales (Lístky) | ✓ | ✓ | – | – | ✓ | – | ✓ | – |
+| Team (Staff) | – | – | ✓ | ✓ | ✓ | ✓ | ✓ | – |
+| Seller (predajca) | – | ✓ (len svoje lístky) | – | – | – | – | – | – |
 
 Zmena, kto čo vidí: `ACCESS` v `auth.js`.
 
@@ -186,6 +203,7 @@ Zmena, kto čo vidí: `ACCESS` v `auth.js`.
 - `ticketpdf.js`: kreslenie PDF lístka (pdfkit, fonty z npm balíkov `@expo-google-fonts/*`)
 - `design.js`: stiahnutie PDF pre kupujúceho, nastavenia Ticket design, nahratie obrázka, náhľad
 - `signup.js`: verejný zápis do staff rozpisu (`/join/…`)
+- `paper.js`: tlačené lístky (dávky, pridelenie, predaj, storno, zneplatnenie, check-in), `paperpdf.js`: PDF na tlač (A4, 10 lístkov)
 - `hub.js`: API pre sklad, staff rozpis, promo, eventy/bary/štatistiky, nápady, účty
 - `demo.js`: skutočné eventy z reportu + demo dáta (označené `demo = 1`)
 - `public/`: stránky (čisté HTML + JS). Spoločná hlavička, navigácia a pomocné funkcie sú v `public/hub.js` a `public/hub.css`.

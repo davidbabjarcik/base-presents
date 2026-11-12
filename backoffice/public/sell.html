@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sell tickets · BASE Hub</title>
+<link rel="icon" href="/assets/favicon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/hub.css">
+<script src="/hub.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+.sell{max-width:560px;display:flex;flex-direction:column;gap:18px}
+.find{display:flex;gap:8px}
+.find input{font:600 20px 'JetBrains Mono',monospace;letter-spacing:.06em;min-height:56px}
+.ticket-card{border:2px solid #fff;padding:20px;display:flex;flex-direction:column;gap:14px}
+.ticket-card .num{font:700 44px Montserrat,Inter,sans-serif;line-height:1;text-align:left}
+.pay{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pay .btn{justify-content:center;min-height:64px;font-size:18px}
+.done{background:#fff;color:#000;padding:22px;text-align:center}
+.done strong{display:block;font:700 34px Montserrat,Inter,sans-serif;text-transform:uppercase;margin-bottom:6px}
+.err{border:2px dashed #fff;padding:18px;text-align:center;font-weight:600}
+</style>
+</head>
+<body>
+<main class="wrap sell">
+  <div>
+    <span class="label" id="when">…</span>
+    <h1 style="margin:6px 0 0">Sell tickets</h1>
+  </div>
+  <div class="stats" id="mine" style="margin:0"></div>
+
+  <form class="find" id="find" autocomplete="off">
+    <input id="code" inputmode="text" placeholder="Ticket # or scan" aria-label="Ticket number or code" autocapitalize="characters">
+    <button class="btn" type="submit" style="width:auto"><span>Find</span></button>
+  </form>
+  <div style="display:flex;gap:8px">
+    <button class="btn ghost" id="cam" type="button"><span>Scan QR with camera</span><span>◉</span></button>
+    <button class="btn ghost" id="torch" type="button" hidden style="width:auto;flex:none"><span>⚡</span></button>
+  </div>
+  <div id="reader" hidden style="width:100%;max-width:420px;background:#141414"></div>
+
+  <div id="result"></div>
+
+  <section>
+    <div class="row" style="margin-bottom:8px"><h2 style="font-size:20px">Your sales</h2><span class="label" id="sales-count"></span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Time</th><th>Ticket</th><th>Type</th><th>Paid</th><th class="num">Price</th><th></th></tr></thead>
+      <tbody id="sales"></tbody>
+    </table></div>
+  </section>
+</main>
+<script>
+(async () => {
+  const { h, api, eur } = Hub;
+  await Hub.start('sell');
+  const KIND = { presale: 'Presale', door: 'Door' };
+  const PAY = { cash: 'Cash', card: 'Card', free: 'Free' };
+  let me, scanner = null, torchOn = false, busy = false, lastScan = '', lastAt = 0;
+
+  async function load() {
+    me = await api('/api/sell/me');
+    Hub.$('#when').textContent = `${me.event.name} · ${me.event.date}`;
+    const hold = me.holding.count ? `#${String(me.holding.from).padStart(4, '0')}–#${String(me.holding.to).padStart(4, '0')}` : '';
+    Hub.$('#mine').replaceChildren(
+      h('div', {}, h('b', {}, String(me.sold)), h('span', { class: 'label' }, 'Sold by you')),
+      h('div', {}, h('b', {}, eur(me.cash)), h('span', { class: 'label' }, 'Cash to hand over')),
+      h('div', {}, h('b', {}, eur(me.card)), h('span', { class: 'label' }, 'Card')),
+      h('div', {}, h('b', {}, String(me.holding.count)), h('span', { class: 'label' }, 'You still hold ' + hold)));
+    Hub.$('#sales-count').textContent = `${me.sold} · ${eur(me.revenue)}`;
+    Hub.$('#sales').replaceChildren(...(me.sales.length ? me.sales.map((s) => h('tr', {},
+      h('td', {}, new Date(s.sold_at).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })),
+      h('td', {}, h('b', {}, '#' + String(s.serial).padStart(4, '0'))),
+      h('td', {}, KIND[s.kind]), h('td', {}, PAY[s.payment]),
+      h('td', { class: 'num' }, s.payment === 'free' ? '0,00 €' : eur(s.price_cents)),
+      h('td', { class: 'num' }, s.undo ? h('button', { class: 'icon-btn', type: 'button', title: 'Undo sale', 'aria-label': 'Undo sale', onclick: () => undo(s.serial) }, '↺') : (s.checked_in_at ? 'in ✓' : ''))))
+      : [h('tr', {}, h('td', { colspan: '6', class: 'muted' }, 'No sales yet.'))]));
+  }
+
+  function showError(msg) {
+    Hub.$('#result').replaceChildren(h('div', { class: 'err', role: 'alert' }, msg));
+    if (navigator.vibrate) navigator.vibrate([60, 60, 60]);
+  }
+
+  async function find(code) {
+    if (!code) return;
+    const t = await api('/api/sell/lookup', { body: { code } });
+    if (!t.found) return showError(t.message);
+    const price = eur(t.price_cents);
+    if (t.status === 'sold') return showError(`${t.label} is already sold (${t.soldBy}, ${t.soldAt}).`);
+    if (t.status === 'void') return showError(`${t.label} is voided. Do not sell it.`);
+    if (!t.mine && !me.staff) return showError(`${t.label} is not one of your tickets (${t.holder !== '—' ? 'it belongs to ' + t.holder : 'it was not given to anyone yet'}).`);
+    const checkin = h('input', { type: 'checkbox', id: 'checkin', style: 'width:24px;min-height:24px', checked: t.kind === 'door' });
+    const sell = (payment) => Hub.run(async () => {
+      if (busy) return; busy = true;
+      try {
+        const r = await api('/api/sell', { body: { code, payment, checkin: checkin.checked } });
+        Hub.$('#result').replaceChildren(h('div', { class: 'done', role: 'status' },
+          h('strong', {}, 'Sold ✓'),
+          h('span', {}, `${r.label} · ${PAY[r.payment]} · ${eur(r.price_cents)}${r.checkedIn ? ' · let in' : ''}`),
+          h('div', { style: 'margin-top:14px' }, h('button', { class: 'btn ghost', type: 'button', style: 'color:#000;border-color:#000;width:auto;display:inline-flex', onclick: () => undo(code) }, h('span', {}, 'Undo')))));
+        if (navigator.vibrate) navigator.vibrate(80);
+        Hub.$('#code').value = '';
+        await load();
+      } finally { busy = false; }
+    });
+    Hub.$('#result').replaceChildren(h('div', { class: 'ticket-card' },
+      h('div', { class: 'row' }, h('span', { class: 'label' }, `${KIND[t.kind]} · ${t.batch}`), h('span', { class: 'chip' }, 'Not sold yet')),
+      h('div', { class: 'row' }, h('span', { class: 'num' }, t.label), h('b', { style: 'font:700 28px Montserrat,Inter,sans-serif' }, price)),
+      h('label', { style: 'flex-direction:row;align-items:center;gap:10px' }, checkin, h('span', {}, 'Also let them in now (at the door)')),
+      h('div', { class: 'pay' },
+        h('button', { class: 'btn', type: 'button', onclick: () => sell('cash') }, h('span', {}, 'Cash')),
+        h('button', { class: 'btn ghost', type: 'button', onclick: () => sell('card') }, h('span', {}, 'Card'))),
+      me.staff ? h('button', { class: 'btn ghost small', type: 'button', onclick: () => sell('free') }, h('span', {}, 'Free (guest list)')) : null));
+  }
+
+  async function undo(code) {
+    if (!confirm('Undo this sale? The ticket goes back to not sold.')) return;
+    await Hub.run(async () => {
+      const r = await api('/api/sell/undo', { body: { code: String(code) } });
+      Hub.toast(`${r.label} back to not sold`); Hub.$('#result').replaceChildren(); await load();
+    });
+  }
+
+  Hub.$('#find').onsubmit = (e) => { e.preventDefault(); Hub.run(() => find(Hub.$('#code').value.trim())); };
+
+  // Camera scanning (same library as the door scanner)
+  async function setTorch(on) {
+    try { await scanner.applyVideoConstraints({ advanced: [{ torch: on }] }); torchOn = on; } catch (e) { torchOn = false; }
+    Hub.$('#torch').style.background = torchOn ? '#fff' : ''; Hub.$('#torch').style.color = torchOn ? '#000' : '';
+  }
+  Hub.$('#torch').onclick = () => setTorch(!torchOn);
+  Hub.$('#cam').onclick = async () => {
+    if (!window.Html5Qrcode) return showError('Camera library did not load. Type the ticket number instead.');
+    if (scanner) {
+      if (torchOn) await setTorch(false);
+      await scanner.stop(); scanner = null; Hub.$('#torch').hidden = true; Hub.$('#reader').hidden = true;
+      Hub.$('#cam').firstElementChild.textContent = 'Scan QR with camera'; return;
+    }
+    Hub.$('#reader').hidden = false;
+    scanner = new Html5Qrcode('reader');
+    try {
+      await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 220 }, (text) => {
+        const t = Date.now();
+        if (text === lastScan && t - lastAt < 4000) return; // same QR still in view
+        lastScan = text; lastAt = t;
+        Hub.$('#code').value = text;
+        Hub.run(() => find(text.trim()));
+      });
+      Hub.$('#cam').firstElementChild.textContent = 'Stop camera';
+      try { const caps = scanner.getRunningTrackCapabilities(); Hub.$('#torch').hidden = !(caps && 'torch' in caps); } catch (e) {}
+    } catch (err) {
+      scanner = null; Hub.$('#reader').hidden = true; showError('Camera not available. Type the ticket number instead.');
+    }
+  };
+
+  await load();
+  Hub.$('#code').focus();
+})();
+</script>
+</body>
+</html>

@@ -35,6 +35,13 @@
       h('p', { class: 'muted', style: 'margin:0' }, date(next.date) + ' · ' + (next.venue || '')));
   }
 
+  if (can('sell') && !can('tickets')) {
+    const s = await api('/api/sell/me');
+    card('Your ticket sales', h('p', { class: 'big' }, s.sold + ' sold'),
+      h('p', { class: 'muted', style: 'margin:0' }, `Cash ${eur(s.cash)} · Card ${eur(s.card)} · you hold ${s.holding.count} tickets`),
+      h('a', { class: 'more', href: '/sell' }, 'Sell tickets →'));
+  }
+
   if (can('tickets')) {
     const t = await api('/api/tickets/summary');
     card('Tickets · ' + t.event.name, h('p', { class: 'big' }, t.sold + ' sold'),

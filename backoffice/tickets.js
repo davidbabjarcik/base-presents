@@ -16,15 +16,16 @@ const normCode = (c) => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '').
 
 const HOLD_MINUTES = 30; // Stripe Checkout sessions live at least 30 min; seats are held that long
 
-export function registerTickets(app, { db, auth, stripe, mode, event, baseUrl, siteUrl, webhookSecret }) {
+// hooks: filled in by paper.js (printed tickets) after it is registered
+export function registerTickets(app, { db, auth, stripe, mode, event, baseUrl, siteUrl, webhookSecret, hooks = {} }) {
   const canceledUrl = `${siteUrl}/?tickets=canceled#tickets`;
   const shell = (title, body) => page(title, body, mode);
 
-  // Seats taken = paid tickets + pending orders still inside their hold window
+  // Seats taken = paid online tickets + pending orders still inside their hold window + SOLD printed tickets
   function seatsTaken() {
     const row = db.prepare(`SELECT COALESCE(SUM(qty), 0) AS n FROM orders
       WHERE status = 'paid' OR (status = 'pending' AND created_at > ?)`).get(now() - (HOLD_MINUTES + 1) * 60000);
-    return Number(row.n);
+    return Number(row.n) + (hooks.paperSold ? hooks.paperSold() : 0);
   }
 
   // Mark an order paid and issue its tickets. Safe to call more than once.
@@ -56,7 +57,9 @@ export function registerTickets(app, { db, auth, stripe, mode, event, baseUrl, s
     res.json({ received: true });
   });
 
-  return function registerJsonRoutes() {
+  registerJsonRoutes.seatsTaken = seatsTaken;
+  return registerJsonRoutes;
+  function registerJsonRoutes() {
     app.get('/api/event', (req, res) => {
       res.json({ ...event, remaining: Math.max(0, event.capacity - seatsTaken()), mode });
     });
@@ -186,7 +189,10 @@ export function registerTickets(app, { db, auth, stripe, mode, event, baseUrl, s
       const code = normCode(req.body.code);
       const out = transaction(db, () => {
         const t = db.prepare('SELECT t.*, o.status FROM tickets t JOIN orders o ON o.id = t.order_id WHERE t.code = ?').get(code);
-        if (!t || t.status !== 'paid') return { result: 'invalid', message: 'Unknown ticket', code };
+        if (!t || t.status !== 'paid') {
+          const paper = hooks.paperCheckin ? hooks.paperCheckin(req.body.code) : null; // printed ticket?
+          return paper || { result: 'invalid', message: 'Unknown ticket', code };
+        }
         if (t.checked_in_at) return { result: 'used', message: `Already used at ${new Date(t.checked_in_at).toLocaleTimeString('sk-SK')}`, holder: t.holder, code };
         db.prepare('UPDATE tickets SET checked_in_at = ? WHERE id = ?').run(now(), t.id);
         return { result: 'ok', message: 'Welcome!', holder: t.holder, code };
@@ -201,11 +207,22 @@ export function registerTickets(app, { db, auth, stripe, mode, event, baseUrl, s
       const revenue = db.prepare("SELECT COALESCE(SUM(amount_cents), 0) AS c FROM orders WHERE status = 'paid'").get().c;
       const orders = db.prepare(`SELECT id, access_token, name, email, qty, amount_cents, status, created_at
                                  FROM orders ORDER BY created_at DESC LIMIT 200`).all();
+      const paper = hooks.paperTotals ? hooks.paperTotals() : { presale: { sold: 0, revenue: 0, checked_in: 0 }, door: { sold: 0, revenue: 0, checked_in: 0 }, printed: 0 };
       res.json({
-        event, mode, sold: Number(sold), checkedIn: Number(checkedIn), revenueCents: Number(revenue),
+        event, mode,
+        // totals = online + sold printed tickets (unsold printed tickets never count)
+        sold: Number(sold) + paper.presale.sold + paper.door.sold,
+        checkedIn: Number(checkedIn) + Number(paper.presale.checked_in || 0) + Number(paper.door.checked_in || 0),
+        revenueCents: Number(revenue) + paper.presale.revenue + paper.door.revenue,
+        breakdown: {
+          online: { sold: Number(sold), revenue: Number(revenue) },
+          presale: { sold: paper.presale.sold, revenue: paper.presale.revenue },
+          door: { sold: paper.door.sold, revenue: paper.door.revenue },
+          printed: paper.printed
+        },
         remaining: Math.max(0, event.capacity - seatsTaken()),
         orders: orders.map(({ access_token, ...o }) => ({ ...o, link: o.status === 'paid' ? `/order/${o.id}?t=${access_token}` : null }))
       });
     });
-  };
+  }
 }

@@ -22,6 +22,9 @@ orders incl. komis/free, stocktakes), staff planning (`/staff`: per-day hour gri
 promo calendar, event & bar stats, event ideas (pros/cons, votes), users.
 PDF tickets: `ticketpdf.js` (pdfkit, phone-shaped page, vector QR), buyer download `/order/:id/tickets.pdf`,
 design settings in `/ticket-design` (stored in `settings` table, artwork in `backoffice/data/uploads/`).
+Printed tickets: `paper.js` + `paperpdf.js`, pages `/printed` (generate batches presale/door with running serials #0001…, A4 print PDF 2×5,
+assign serial ranges to sellers, void) and `/sell` (mark sold by QR or number, cash/card/free, undo 15 min). Only SOLD printed tickets
+count in sales, revenue and capacity; door scanner rejects unsold ones. Role `seller` sees only Sell; logins may be plain usernames (e.g. policiasrj9).
 Public staff sign-up: `signup.js`, link `/join/<token>` per staff day with chosen sections; rows get `self = 1`. Roles admin / tickets / team (`ACCESS` in `backoffice/auth.js`).
 Accounts are seeded from `backoffice/.env` on first start (not committed); logins are listed in `README.md` and
 `backoffice/README.md`. Data lives in `backoffice/data/base.db` (not committed). Demo rows have `demo = 1`.

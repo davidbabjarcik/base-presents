@@ -5,12 +5,14 @@ import { now, randomId } from './db.js';
 export const ROLES = {
   admin: 'Admin',
   tickets: 'Ticket sales',
-  team: 'Team'
+  team: 'Team',
+  seller: 'Seller'          // e.g. a student association selling printed tickets
 };
 
 // Which roles can open which section
 export const ACCESS = {
   tickets: ['admin', 'tickets'],
+  sell: ['admin', 'tickets', 'seller'],
   stock: ['admin', 'team'],
   staff: ['admin', 'team'],
   promo: ['admin', 'tickets', 'team'],
